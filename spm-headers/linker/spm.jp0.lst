@@ -454,3 +454,6 @@
 1,5,15ef00:dan_start_shadoo_evt
 1,5,d1938:sammerDefsCh6
 1,5,d1de8:sammerDefsEndgame
+
+// new to rld3 v1
+8025C158:strcat

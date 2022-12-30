@@ -449,3 +449,6 @@
 8013EF68:marioChgMot
 80061D1C:fadeSetMapChangeTransition
 80235834:spsndCheckBgmPlaying
+
+// new to rld3 v1
+8026078C:strcat

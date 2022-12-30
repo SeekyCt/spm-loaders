@@ -523,6 +523,7 @@
 8025a874:memmove
 8025e8fc:strcpy
 8025e9bc:strncpy
+8025ea00:strcat
 8025ea78:strcmp
 8025eb94:strncmp
 8025ebd4:strchr
