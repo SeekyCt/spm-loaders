@@ -8,6 +8,11 @@
 
 CPP_WRAPPER(ios::fs)
 
+enum FsErr
+{
+    ERR_FS_ENOENT = -106
+};
+
 enum FsIoctl
 {
     IOCTL_FS_FORMAT = 1,
