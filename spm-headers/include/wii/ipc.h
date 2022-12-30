@@ -4,6 +4,16 @@
 
 CPP_WRAPPER(wii::IPC)
 
+/*
+    IOS_Open mode param
+*/
+enum IosOpenMode
+{
+/* 0x0 */ IOS_OPEN_NONE,
+/* 0x1 */ IOS_OPEN_READ,
+/* 0x2 */ IOS_OPEN_WRITE
+};
+
 typedef struct
 {
 /* 0x0 */ void * data;
