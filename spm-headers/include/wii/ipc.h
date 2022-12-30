@@ -14,6 +14,16 @@ enum IosOpenMode
 /* 0x2 */ IOS_OPEN_WRITE
 };
 
+/*
+    /dev/fs GetFileStats output
+*/
+typedef struct
+{
+/* 0x0 */ u32 position;
+/* 0x4 */ u32 length;
+} FsFileStats;
+SIZE_ASSERT(FsFileStats, 8);
+
 typedef struct
 {
 /* 0x0 */ void * data;
