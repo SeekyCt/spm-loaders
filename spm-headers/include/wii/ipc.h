@@ -42,7 +42,7 @@ UNKNOWN_FUNCTION(IOS_WriteAsync);
 UNKNOWN_FUNCTION(IOS_Write);
 UNKNOWN_FUNCTION(IOS_SeekAsync);
 UNKNOWN_FUNCTION(IOS_IoctlAsync);
-UNKNOWN_FUNCTION(IOS_Ioctl);
+s32 IOS_Ioctl(s32 fd, s32 command, void * buf, u32 bufSize, void * ioBuf, u32 ioBufSize);
 UNKNOWN_FUNCTION(__ios_Ioctlv);
 UNKNOWN_FUNCTION(IOS_IoctlvAsync);
 s32 IOS_Ioctlv(s32 fd, s32 command, s32 inCount, s32 outCount, Ioctlv * vecs);
