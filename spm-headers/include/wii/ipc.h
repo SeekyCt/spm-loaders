@@ -37,7 +37,7 @@ s32 IOS_Open(const char * path, s32 mode);
 UNKNOWN_FUNCTION(IOS_CloseAsync);
 s32 IOS_Close(s32 fd);
 UNKNOWN_FUNCTION(IOS_ReadAsync);
-UNKNOWN_FUNCTION(IOS_Read);
+s32 IOS_Read(s32 fd, void * dest, u32 length);
 UNKNOWN_FUNCTION(IOS_WriteAsync);
 UNKNOWN_FUNCTION(IOS_Write);
 UNKNOWN_FUNCTION(IOS_SeekAsync);

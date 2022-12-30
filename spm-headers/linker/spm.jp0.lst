@@ -457,4 +457,5 @@
 
 // new to rld3 v1
 8025C158:strcat
+80295C84:IOS_Read
 802961AC:IOS_Ioctl

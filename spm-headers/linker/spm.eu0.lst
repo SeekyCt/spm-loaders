@@ -629,6 +629,7 @@
 // ipc.a
 80298268:IOS_Open
 80298448:IOS_Close
+802985f0:IOS_Read
 80298b18:IOS_Ioctl
 80298e68:IOS_Ioctlv
 // more
