@@ -2,7 +2,7 @@
 
 #include <common.h>
 
-CPP_WRAPPER(wii::IPC)
+CPP_WRAPPER(wii::ipc)
 
 /*
     IOS_Open mode param
