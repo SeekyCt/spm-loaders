@@ -115,3 +115,9 @@ typedef u8 unk8;
 #else
     #define NORETURN
 #endif
+
+#ifndef __INTELLISENSE__
+    #define ALIGNED(x) __attribute__((aligned(x)))
+#else
+    #define ALIGNED(x)
+#endif
