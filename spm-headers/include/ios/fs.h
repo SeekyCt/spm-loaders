@@ -33,8 +33,8 @@ enum FsIoctl
 */
 typedef struct
 {
-/* 0x0 */ u32 position;
-/* 0x4 */ u32 length;
+/* 0x0 */ u32 length;
+/* 0x4 */ u32 position;
 } FsFileStats;
 SIZE_ASSERT(FsFileStats, 8);
 
