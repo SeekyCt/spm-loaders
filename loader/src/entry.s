@@ -9,6 +9,7 @@
 */
 
 .global ctx
+.type ctx, @object
 ctx:
 
 // 0x0 Magic
@@ -31,11 +32,14 @@ ctx:
 // 0x14 Reserved
 .space 0x20 - 0x14
 
+.size ctx, . - ctx
+
 /*
     Entrypoint - 0x80004220
 */
 
 .global entry
+.type entry, @function
 entry:
     mflr r0
     stwu r1, -0x10 (r1)
@@ -51,3 +55,4 @@ entry:
     mtlr r0
     addi r1, r1, 0x10
     blr
+.size entry, . - entry
