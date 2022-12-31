@@ -70,16 +70,11 @@ The loader creates a context struct in the reserved memory for mods to use.
 - A host rel should assert that this is null before writing here
 - The context should start with a 4 byte magic value, hosts are free to structure the rest however they like
 - Child rels should assert the magic matches the expected host
-    - The actual magic should be included in error messages if not for debugging
+    - If not, the actual magic should be included in error messages for debugging
 - Host rels are free to decide their own magic, though adding it to this list would be ideal
 
 Known magic values:
 
 | Magic Value | Host Type |
 |-------------|-----------|
-| SPMC        | spm-core  |
-
-
-EXCEPT
-
-What about all the library stuff too
+| CORE        | spm-core  |
