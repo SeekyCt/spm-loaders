@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     # Make code
     code = (
-        make_branch_04(args.hook_addr, args.bin_addr + CTX_SIZE, True) +
+        make_branch_04(args.hook_addr, args.bin_addr + CTX_SIZE) +
         make_bin_06(args.bin_addr, data)
     )
 

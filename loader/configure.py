@@ -13,8 +13,8 @@ from ninja_syntax import Writer
 
 BASE_ADDR = "80004200"
 HOOK_ADDRS = {
-    "eu0" : "801a84b0",
-    "eu1" : "801a84b0",
+    "eu0" : "801a84d4",
+    "eu1" : "801a84d4",
     # TODO
     "us0" : "0",
     "us1" : "0",
