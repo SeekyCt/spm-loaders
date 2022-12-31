@@ -1,7 +1,7 @@
 ## General Notes
 
 - The loader doesn't assume that the rel being loaded is spm-core specifically (but ideally spm-core would cover every use case anwyay)
-- A certain range of RAM across all regions: 80004200 - 800060bb (inclusive)
+- A certain range of RAM across all regions is reserved for this: 80004200 - 800060bb (inclusive)
     - 80004200 - 8000421f is the context
     - 80004220+ is the loader (entrypoint 80004220)
     - This range can be patched in a dol easily
@@ -9,6 +9,8 @@
     - Technically, anything from the TRK string at 80004188 could've been used
         - The starting address chosen is slightly nicer
         - This still leaves some space for future standards to use, should that be needed
+- The loader hooks on the blr of spmarioInit
+    - If using gecko codes on console, this requires `VI Hook` to be able to be patched in time
 
 ## Context
 
