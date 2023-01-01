@@ -623,6 +623,7 @@
 
 // mem.a
 // mem_expHeap.c
+80295b3c:MEMAllocFromExpHeapEx
 80295cb8:MEMGetAllocatableSizeForExpHeapEx
 80295d90:MEMGetSizeForMBlockExpHeap
 
