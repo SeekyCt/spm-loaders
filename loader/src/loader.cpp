@@ -25,23 +25,24 @@ static const wii::gx::GXColor fg = {0xff, 0xff, 0xff, 0xff};
 static const wii::gx::GXColor bg = {0x00, 0x00, 0x00, 0xff};
 
 // TODO: consider adding function names
-static void NORETURN errorPanic(const char * file, s32 line, s32 code)
+static void NORETURN errorPanic(const char * file, s32 line, s32 code, const char * function)
 {
-    char message[256];
+    char message[128];
     msl::stdio::sprintf(
         message,
-        "[%d %d] %s line %d: unexpected error %d",
+        "[%d %d] %s line %d: unexpected error %d from %s",
         ctx.loaderType,
         ctx.loaderVersion,
         file,
         line,
-        code
+        code,
+        function
     );
     wii::os::OSFatal(&fg, &bg, message);
 }
 
-#define CHECK_ERROR(code) if (code < 0) errorPanic(__FILE__, __LINE__, code)
-#define CHECK_TRUE(x) if (!x) errorPanic(__FILE__, __LINE__, x)
+#define CHECK_ERROR(code, function) if (code < 0) errorPanic(__FILE__, __LINE__, code, function)
+#define CHECK_TRUE(x, function) if (!x) errorPanic(__FILE__, __LINE__, x, function)
 
 #ifdef SPM_EU0
     #define FILENAME "eu0.rel"
@@ -74,12 +75,12 @@ static wii::os::RelHeader * tryNandLoad()
     s32 fd = wii::ipc::IOS_Open(path, wii::ipc::IOS_OPEN_READ);
     if (fd == ios::fs::ERR_FS_ENOENT)
         return nullptr;
-    CHECK_ERROR(fd);
+    CHECK_ERROR(fd, "IOS_Open");
 
     // Get length
     ios::fs::FsFileStats ALIGNED(IOS_ALIGN) stats;
     ret = wii::ipc::IOS_Ioctl(fd, ios::fs::IOCTL_FS_GET_FILE_STATS, nullptr, 0, &stats, sizeof(stats));
-    CHECK_ERROR(ret);
+    CHECK_ERROR(ret, "IOS_Ioctl");
     u32 length = ALIGN_TO(stats.length, IOS_ALIGN);
 
     // Allocate memory
@@ -88,11 +89,11 @@ static wii::os::RelHeader * tryNandLoad()
 
     // Read rel
     ret = wii::ipc::IOS_Read(fd, rel, stats.length);
-    CHECK_ERROR(ret);
+    CHECK_ERROR(ret, "IOS_Read");
 
     // Close
     ret = wii::ipc::IOS_Close(fd);
-    CHECK_ERROR(ret);
+    CHECK_ERROR(ret, "IOS_Close");
 
     wii::os::OSReport("Read from NAND\n");
     return rel;
@@ -144,7 +145,7 @@ void loaderMain()
 
     // Link
     bool ret = wii::os::OSLink(rel, bss);
-    CHECK_TRUE(ret);
+    CHECK_TRUE(ret, "OSLink");
 
     // Call prolog
     rel->prolog();
