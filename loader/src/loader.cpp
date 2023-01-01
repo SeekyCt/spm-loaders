@@ -75,7 +75,7 @@ static wii::os::RelHeader * tryNandLoad()
     CHECK_ERROR(fd);
 
     // Get length
-    ios::fs::FsFileStats IOS_ALIGNED stats;
+    ios::fs::FsFileStats ALIGNED(IOS_ALIGN) stats;
     ret = wii::ipc::IOS_Ioctl(fd, ios::fs::IOCTL_FS_GET_FILE_STATS, nullptr, 0, &stats, sizeof(stats));
     CHECK_ERROR(ret);
     u32 length = (stats.length + 0x1f) & ~0x1f;

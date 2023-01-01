@@ -4,6 +4,6 @@
 
 CPP_WRAPPER(ios)
 
-#define IOS_ALIGNED ALIGNED(32)
+#define IOS_ALIGN 32
 
 CPP_WRAPPER_END()
