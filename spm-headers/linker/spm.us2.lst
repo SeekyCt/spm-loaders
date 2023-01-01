@@ -128,8 +128,8 @@
 801A59A8:__memAlloc
 801A5A2C:__memFree
 803EBF48:size_table
-8056CB68:memoryWp
-8056CB6C:memorySwp
+8056CB68:memory_wp
+8056CB6C:memory_swp
 80235A90:wpadGetButtonsHeld
 80235AB8:wpadGetButtonsPressed
 80235ACC:wpadGetButtonsHeldRepeat
@@ -313,8 +313,8 @@
 801848C8:pausewinDelete
 80187C88:pausewinSetMessage
 80189470:pluswinChapterWinOpen
-8056CAF0:pluswinWp
-8056d330:pausewinWp
+8056CAF0:pausewin_pluswinWp
+8056d330:pausewin_wp
 80199300:hudStartCountdown
 8019C738:rand
 8019D674:DVDMgrOpen

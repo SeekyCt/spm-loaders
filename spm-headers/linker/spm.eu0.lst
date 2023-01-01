@@ -77,7 +77,7 @@
 800677f8:fadeIsFinish
 800678e8:fadeSetMapChangeTransition
 // more
-805ae828:fadedrvWp2
+805ae828:fadedrv_wp
 
 // hitdrv.c
 8006f920:hitNameToPtr
@@ -318,8 +318,8 @@
 80189cf0:pluswinChapterWinOpen
 // more
 // data
-805ae0f0:pluswinWp
-805ae930:pausewinWp
+805ae0f0:pausewin_pluswinWp
+805ae930:pausewin_wp
 // more
 
 // charpixlitemwin.c
@@ -403,8 +403,8 @@
 // data
 8042a408:size_table
 // sdata
-805ae168:memoryWp
-805ae16c:memorySwp
+805ae168:memory_wp
+805ae16c:memory_swp
 
 // parse.c
 801a6e9c:parseInit
