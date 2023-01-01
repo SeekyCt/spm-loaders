@@ -66,6 +66,13 @@ static void NORETURN errorPanic(const char * file, s32 line, const char * functi
     #define FILENAME "kr0.rel"
 #endif
 
+static void * alloc(size_t size, u32 alignment = 0)
+{
+    alignment = alignment > 0x20 ? alignment : 0x20;
+    auto handle = spm::memory::memory_wp->heapHandle[spm::memory::HEAP_MEM1_UNUSED];
+    return wii::mem::MEMAllocFromExpHeapEx(handle, size, alignment);
+}
+
 static wii::os::RelHeader * tryNandLoad()
 {
     char path[64];
@@ -88,8 +95,8 @@ static wii::os::RelHeader * tryNandLoad()
     u32 length = ALIGN_TO(stats.length, IOS_ALIGN);
 
     // Allocate memory
-    // TODO: check if too big (bypass memalloc entirely)
-    auto * rel = (wii::os::RelHeader *) spm::memory::__memAlloc(spm::memory::HEAP_MEM1_UNUSED, length);
+    auto * rel = (wii::os::RelHeader *) alloc(length, IOS_ALIGN);
+    CHECK_PTR(rel, "rel alloc");
 
     // Read rel
     ret = wii::ipc::IOS_Read(fd, rel, stats.length);
@@ -117,8 +124,8 @@ static wii::os::RelHeader * tryDvdLoad()
     u32 length = ALIGN_TO(spm::dvdmgr::DVDMgrGetLength(entry), DVD_ALIGN);
  
     // Allocate memory
-    // TODO: check if too big (bypass memalloc entirely)
-    auto * rel = (wii::os::RelHeader *) spm::memory::__memAlloc(spm::memory::HEAP_MEM1_UNUSED, length);
+    auto * rel = (wii::os::RelHeader *) alloc(length, DVD_ALIGN);
+    CHECK_PTR(rel, "rel alloc");
 
     // Try read
     spm::dvdmgr::DVDMgrRead(entry, rel, length, 0);
@@ -143,9 +150,8 @@ void loaderMain()
         wii::os::OSFatal(&fg, &bg, "Error: rel not found on disc or in save file");
 
     // Allocate bss
-    // TODO: check if too big
-    // TODO: use bss align
-    void * bss = spm::memory::__memAlloc(spm::memory::HEAP_MEM1_UNUSED, rel->bssSize);
+    void * bss = alloc(rel->bssSize, rel->bssAlign);
+    CHECK_PTR(bss, "bss alloc");
 
     // Link
     bool ret = wii::os::OSLink(rel, bss);
