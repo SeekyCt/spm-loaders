@@ -25,24 +25,28 @@ static const wii::gx::GXColor fg = {0xff, 0xff, 0xff, 0xff};
 static const wii::gx::GXColor bg = {0x00, 0x00, 0x00, 0xff};
 
 // TODO: consider adding function names
-static void NORETURN errorPanic(const char * file, s32 line, s32 code, const char * function)
+static void NORETURN errorPanic(const char * file, s32 line, const char * function, s32 code,
+                                const char * context)
 {
     char message[128];
     msl::stdio::sprintf(
         message,
-        "[%d %d] %s line %d: unexpected error %d from %s",
+        "[%d %d] %s line %d (%s): unexpected %d from %s",
         ctx.loaderType,
         ctx.loaderVersion,
         file,
         line,
+        function,
         code,
-        function
+        context
     );
     wii::os::OSFatal(&fg, &bg, message);
 }
 
-#define CHECK_ERROR(code, function) if (code < 0) errorPanic(__FILE__, __LINE__, code, function)
-#define CHECK_TRUE(x, function) if (!x) errorPanic(__FILE__, __LINE__, x, function)
+#define ERROR(code, context) errorPanic(__FILE__, __LINE__, __FUNCTION__, code, context)
+#define CHECK_ERROR(code, ctx) if (code < 0) ERROR(code, ctx)
+#define CHECK_TRUE(condition, context) if (!condition) ERROR(0, context)
+#define CHECK_PTR(ptr, context) if (ptr == nullptr) ERROR(0, context)
 
 #ifdef SPM_EU0
     #define FILENAME "eu0.rel"
