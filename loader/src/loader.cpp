@@ -9,6 +9,8 @@
 #include <msl/stdio.h>
 #include <msl/string.h>
 
+#define ALIGN_TO(val, align) (((val) + ((align)-1)) & ~((align)-1))
+
 struct LoaderContext
 {
 /* 0x00 */ char magic[4]; // RLd3
@@ -78,7 +80,7 @@ static wii::os::RelHeader * tryNandLoad()
     ios::fs::FsFileStats ALIGNED(IOS_ALIGN) stats;
     ret = wii::ipc::IOS_Ioctl(fd, ios::fs::IOCTL_FS_GET_FILE_STATS, nullptr, 0, &stats, sizeof(stats));
     CHECK_ERROR(ret);
-    u32 length = (stats.length + 0x1f) & ~0x1f;
+    u32 length = ALIGN_TO(stats.length, IOS_ALIGN);
 
     // Allocate memory
     // TODO: check if too big (bypass memalloc entirely)
@@ -107,7 +109,7 @@ static wii::os::RelHeader * tryDvdLoad()
         return nullptr;
 
     // Get length
-    u32 length = (spm::dvdmgr::DVDMgrGetLength(entry) + 0x1f) & ~0x1f;
+    u32 length = ALIGN_TO(spm::dvdmgr::DVDMgrGetLength(entry), DVD_ALIGN);
  
     // Allocate memory
     // TODO: check if too big (bypass memalloc entirely)
