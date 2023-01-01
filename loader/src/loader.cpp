@@ -31,14 +31,14 @@ static void NORETURN errorPanic(const char * file, s32 line, const char * functi
     char message[128];
     msl::stdio::sprintf(
         message,
-        "[%d %d] %s line %d (%s): unexpected %d from %s",
+        "[%d %d] %s line %d (%s): failed %s with %d",
         ctx.loaderType,
         ctx.loaderVersion,
         file,
         line,
         function,
-        code,
-        context
+        context,
+        code
     );
     wii::os::OSFatal(&fg, &bg, message);
 }
@@ -46,7 +46,7 @@ static void NORETURN errorPanic(const char * file, s32 line, const char * functi
 #define ERROR(code, context) errorPanic(__FILE__, __LINE__, __FUNCTION__, code, context)
 #define CHECK_ERROR(code, ctx) if (code < 0) ERROR(code, ctx)
 #define CHECK_TRUE(condition, context) if (!condition) ERROR(0, context)
-#define CHECK_PTR(ptr, context) if (ptr == nullptr) ERROR(0, context)
+#define CHECK_PTR(ptr, size, context) if (ptr == nullptr) ERROR(size, context)
 
 #ifdef SPM_EU0
     #define FILENAME "eu0.rel"
@@ -96,7 +96,7 @@ static wii::os::RelHeader * tryNandLoad()
 
     // Allocate memory
     auto * rel = (wii::os::RelHeader *) alloc(length, IOS_ALIGN);
-    CHECK_PTR(rel, "rel alloc");
+    CHECK_PTR(rel, length, "rel alloc");
 
     // Read rel
     ret = wii::ipc::IOS_Read(fd, rel, stats.length);
@@ -125,7 +125,7 @@ static wii::os::RelHeader * tryDvdLoad()
  
     // Allocate memory
     auto * rel = (wii::os::RelHeader *) alloc(length, DVD_ALIGN);
-    CHECK_PTR(rel, "rel alloc");
+    CHECK_PTR(rel, length, "rel alloc");
 
     // Try read
     spm::dvdmgr::DVDMgrRead(entry, rel, length, 0);
@@ -151,7 +151,7 @@ void loaderMain()
 
     // Allocate bss
     void * bss = alloc(rel->bssSize, rel->bssAlign);
-    CHECK_PTR(bss, "bss alloc");
+    CHECK_PTR(bss, rel->bssSize, "bss alloc");
 
     // Link
     bool ret = wii::os::OSLink(rel, bss);
