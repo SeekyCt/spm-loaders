@@ -33,7 +33,6 @@ PYTHON = sys.executable
 
 # Project dirs
 SRCDIR = "src"
-INCDIR = "include"
 LINKDIR = "linker"
 BUILDDIR = "build"
 OUTDIR = "out"
@@ -64,7 +63,6 @@ OBJCOPY = os.path.join("$devkitppc", "bin", "powerpc-eabi-objcopy")
 INCLUDES = ' '.join(
     "-I " + d
     for d in [
-        "$incdir",
         os.path.join("$spm_headers", "include"),
         os.path.join("$spm_headers", "mod"),
     ]
@@ -142,8 +140,6 @@ def emit_vars(n: Writer):
     n.variable("python", PYTHON)
 
     # Project dirs
-    n.variable("srcdir", SRCDIR)
-    n.variable("incdir", INCDIR)
     n.variable("linkdir", LINKDIR)
     n.variable("builddir", BUILDDIR)
     n.variable("outdir", OUTDIR)
