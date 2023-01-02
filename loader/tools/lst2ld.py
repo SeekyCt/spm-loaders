@@ -23,7 +23,7 @@ def load_lst(filename: str) -> Tuple[List[DolSymbol], List[RelSymbol]]:
     # Load LST
     with open(filename) as f:
         lines = f.readlines()
-    
+
     # Parse lines
     dol_symbols = []
     rel_symbols = []
@@ -70,6 +70,7 @@ def make_ld(symbols: List[DolSymbol]) -> str:
         f"PROVIDE({sym.name} = 0x{sym.addr:x});"
         for sym in symbols
     ])
+
 
 if __name__ == "__main__":
     parser = ArgumentParser()

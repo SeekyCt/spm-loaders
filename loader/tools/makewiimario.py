@@ -2,6 +2,7 @@ from math import ceil
 from typing import Tuple
 from common import be32
 
+
 class ItemData:
     """ItemData struct constants"""
 
@@ -37,7 +38,7 @@ class PouchWork:
     OFFS_CATCH_CARDS = 0x10c
 
     ADDR = {
-        "eu0" : 0x80511a28
+        "eu0": 0x80511a28
     }
 
     def addr_to_save_offs(version: str, addr: int) -> int:
@@ -53,7 +54,7 @@ class StackFrame:
 
 def find_desc_msg_loc(version: str) -> Tuple[int, int]:
     """Finds an item id and offset can be used for a fake descMsg pointer
-    
+
     This needs to be a multiple of sizeof(ItemData) away from itemDataTable
     + offsetof(ItemData, descMsg) so that itemDataTable[x].descMsg would read it
     """

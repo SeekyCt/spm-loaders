@@ -5,6 +5,7 @@ from common import be32, Context, LoaderType, write_u32
 LOADER_TYPE = LoaderType.GECKO
 LOADER_VERSION = 1
 
+
 def patch_context(data: bytes) -> bytes:
     """Patch the context of the loader"""
 
@@ -62,6 +63,7 @@ def to_gecko_text(code: bytes) -> str:
         ret.append(f"{first} {second}")
     return '\n'.join(ret)
 
+
 if __name__ == "__main__":
     hex_int = lambda x: int(x, 16)
     parser = ArgumentParser()
@@ -74,7 +76,7 @@ if __name__ == "__main__":
     # Get data
     with open(args.bin_path, "rb") as f:
         data = f.read()
-    
+
     # Patch header
     data = patch_context(data)
 
@@ -90,4 +92,3 @@ if __name__ == "__main__":
     # Output
     with open(args.out_path, "w") as f:
         f.write(txt)
-
