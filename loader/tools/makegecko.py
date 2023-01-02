@@ -1,27 +1,17 @@
 from argparse import ArgumentParser
 
-CTX_SIZE = 0x20
-CTX_TYPE_OFFS = 0x8
-CTX_VERSION_OFFS = 0xc
+from common import be32, Context, LoaderType, write_u32
 
-LOADER_TYPE = 0
+LOADER_TYPE = LoaderType.GECKO
 LOADER_VERSION = 1
-
-def be32(val: int) -> bytes:
-    """Converts an integer to big-endian 32-bit"""
-
-    return int.to_bytes(val, 4, "big")
 
 def patch_context(data: bytes) -> bytes:
     """Patch the context of the loader"""
 
     data = bytearray(data)
 
-    # Loader type
-    data[CTX_TYPE_OFFS:CTX_TYPE_OFFS+4] = be32(LOADER_TYPE)
-
-    # Loader version
-    data[CTX_VERSION_OFFS:CTX_VERSION_OFFS+4] = be32(LOADER_VERSION)
+    write_u32(data, Context.OFFS_LOADER_TYPE, LOADER_TYPE)
+    write_u32(data, Context.OFFS_LOADER_VERSION, LOADER_VERSION)
 
     return bytes(data)
 
@@ -90,7 +80,7 @@ if __name__ == "__main__":
 
     # Make code
     code = (
-        make_branch_04(args.hook_addr, args.bin_addr + CTX_SIZE) +
+        make_branch_04(args.hook_addr, args.bin_addr + Context.SIZE) +
         make_bin_06(args.bin_addr, data)
     )
 

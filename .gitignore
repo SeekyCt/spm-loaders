@@ -4,6 +4,7 @@ out
 build.ninja
 
 # Tool / user files
+__pycache__
 .vscode
 *.bat
 compile_commands.json
