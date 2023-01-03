@@ -53,7 +53,7 @@ class StackFrame:
 
 
 def find_desc_msg_loc(version: str) -> Tuple[int, int]:
-    """Finds an item id and offset can be used for a fake descMsg pointer
+    """Finds an item id and offset that can be used for a fake descMsg pointer
 
     This needs to be a multiple of sizeof(ItemData) away from itemDataTable
     + offsetof(ItemData, descMsg) so that itemDataTable[x].descMsg would read it
