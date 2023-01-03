@@ -265,6 +265,7 @@ def build_symbols_ld(n: Writer, ver: str):
         inputs = os.path.join("$spm_headers", "linker", f"spm.{lst_ver}.lst")
     )
 
+# Ninja rule to run for a file extension
 OFILE_EXT_RULES = {
     ".c" : "cc",
     ".cpp" : "cxx",
@@ -314,10 +315,8 @@ def build_module_elf(n: Writer, name: str, ver: str) -> str:
 
     return elf_name
 
-def emit_build(n: Writer, ver: str):
-    """Emits the build statements for a version to a ninja file"""
-
-    elf_name = build_module_elf(n, "relloader", ver)
+def build_bin(n: Writer, elf_name: str, ver: str) -> str:
+    """Builds a bin from an ELF for a specific version"""
 
     # Emit bin build
     bin_name = os.path.join("$outdir", f"{ver}.bin")
@@ -326,6 +325,11 @@ def emit_build(n: Writer, ver: str):
         rule = "objcopy",
         inputs = elf_name
     )
+
+    return bin_name
+
+def build_gecko(n: Writer, bin_name: str, ver: str) -> str:
+    """Builds a gecko code from an ELF for a version"""
 
     # Emit gecko build
     gecko_name = os.path.join("$outdir", f"{ver}.txt")
@@ -339,26 +343,7 @@ def emit_build(n: Writer, ver: str):
         }
     )
 
-    # Make a default target
-    n.default(gecko_name)
-
-    # Add short phony
-    n.build(
-        ver,
-        rule = "phony",
-        inputs = [gecko_name]
-    )
-
-versions = [
-    "eu0",
-    "eu1",
-    "jp0",
-    "jp1",
-    "us0",
-    "us1",
-    "us2",
-    "kr0",
-]
+    return gecko_name
 
 def main(versions: List[str]):
     # Setup ninja
@@ -371,13 +356,42 @@ def main(versions: List[str]):
     emit_vars(n)
     emit_rules(n)
     for ver in versions:
+        # Generate symbols script
         build_symbols_ld(n, ver)
-        emit_build(n, ver)
+
+        # Build relloader
+        relloader = build_module_elf(n, "relloader", ver)
+        relloader_bin = build_bin(n, relloader, ver)
+        
+        # Build gecko code
+        gecko_name = build_gecko(n, relloader_bin, ver)
+
+        # Add build shortcuts
+        n.build(
+            ver,
+            rule = "phony",
+            inputs = [
+                relloader_bin,
+                gecko_name
+            ]
+        )
+        n.default(ver)
 
     # Write to file
     with open("build.ninja", 'w') as f:
         f.write(outbuf.getvalue())
     n.close()
+
+versions = [
+    "eu0",
+    "eu1",
+    "jp0",
+    "jp1",
+    "us0",
+    "us1",
+    "us2",
+    "kr0",
+]
 
 if __name__=="__main__":
     # Enable versions passed in comand line, default to all
