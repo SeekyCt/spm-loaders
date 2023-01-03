@@ -3,6 +3,14 @@ from typing import Tuple
 from common import be32
 
 
+"""
+Save file parts used:
+    PouchWork.shopItems: fake descMsg pointer
+    PouchWork.minigameScores: saveloader
+    SpmarioGlobals.gsw[0x400]+: payload (copied to main relloader address)
+"""
+
+
 class ItemData:
     """ItemData struct constants"""
 
