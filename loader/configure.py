@@ -32,7 +32,6 @@ HOOK_ADDRS = {
 PYTHON = sys.executable
 
 # Project dirs
-SRCDIR = "src"
 LINKDIR = "linker"
 BUILDDIR = "build"
 OUTDIR = "out"
@@ -190,9 +189,11 @@ def emit_rules(n: Writer):
     )
 
     # .s -> .o compilation
+    # Variables to pass in:
+    #     verflags: defines for the region being compiled
     n.rule(
         "as",
-        command = "$cc -MD -MT $out -MF $out.d $asflags -c $in -o $out",
+        command = "$cc -MD -MT $out -MF $out.d $asflags $verflags -c $in -o $out",
         depfile = "$out.d",
         deps = "gcc",
         description = "AS $out"
@@ -249,6 +250,21 @@ def find_files(path: str) -> List[str]:
 
     return ret
 
+def get_symbols_ld(ver: str) -> str:
+    """Gets the symbols ld script path for a version"""
+
+    return os.path.join("$builddir", f"symbols_{ver}.ld")
+
+def build_symbols_ld(n: Writer, ver: str):
+    """Builds the symbols ld script for a version"""
+
+    lst_ver = "eu0" if ver == "eu1" else ver
+    n.build(
+        get_symbols_ld(ver),
+        rule = "lst2ld",
+        inputs = os.path.join("$spm_headers", "linker", f"spm.{lst_ver}.lst")
+    )
+
 OFILE_EXT_RULES = {
     ".c" : "cc",
     ".cpp" : "cxx",
@@ -256,14 +272,14 @@ OFILE_EXT_RULES = {
     ".S" : "as"
 }
 
-def emit_build(n: Writer, ver: str):
-    """Emits the build statements for a version to a ninja file"""
+def build_module_elf(n: Writer, name: str, ver: str) -> str:
+    """Builds an ELF for a module on a specific version"""
 
     # Handle source files
     ofiles = []
     verflags = f"-DSPM_{ver.upper()}"
-    ldscripts = []
-    for path in find_files(SRCDIR):
+    ldscripts = [get_symbols_ld(ver)]
+    for path in find_files(name):
         # Choose rule based on file extension
         _, ext = os.path.splitext(path)
         if ext in OFILE_EXT_RULES:
@@ -280,21 +296,10 @@ def emit_build(n: Writer, ver: str):
             ldscripts.append(path)
         else:
             assert False, f"Unknown file type {ext} for {path}"
-    
-    # Add symbols ld script
-    symbols = os.path.join("$builddir", ver, "symbols.ld")
-    lst_ver = "eu0" if ver == "eu1" else ver
-    lst = os.path.join("$spm_headers", "linker", f"spm.{lst_ver}.lst")
-    n.build(
-        symbols,
-        rule = "lst2ld",
-        inputs = lst
-    )
-    ldscripts.append(symbols)
 
     # Emit elf build
-    elf_name = os.path.join("$outdir", f"{ver}.elf")
-    map_name = os.path.join("$outdir", f"{ver}.map")
+    elf_name = os.path.join("$outdir", f"{name}_{ver}.elf")
+    map_name = f"{elf_name}.map"
     n.build(
         elf_name,
         rule = "ld",
@@ -306,6 +311,13 @@ def emit_build(n: Writer, ver: str):
             "ldscripts" : [f"-T{ld}" for ld in ldscripts]
         }
     )
+
+    return elf_name
+
+def emit_build(n: Writer, ver: str):
+    """Emits the build statements for a version to a ninja file"""
+
+    elf_name = build_module_elf(n, "relloader", ver)
 
     # Emit bin build
     bin_name = os.path.join("$outdir", f"{ver}.bin")
@@ -359,6 +371,7 @@ def main(versions: List[str]):
     emit_vars(n)
     emit_rules(n)
     for ver in versions:
+        build_symbols_ld(n, ver)
         emit_build(n, ver)
 
     # Write to file
