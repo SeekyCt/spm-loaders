@@ -1,3 +1,4 @@
+#include <common.h>
 #include <spm/dvdmgr.h>
 #include <spm/memory.h>
 #include <wii/gx.h>
