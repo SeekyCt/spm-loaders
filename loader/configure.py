@@ -140,7 +140,6 @@ def emit_vars(n: Writer):
     n.variable("python", PYTHON)
 
     # Project dirs
-    n.variable("linkdir", LINKDIR)
     n.variable("builddir", BUILDDIR)
     n.variable("outdir", OUTDIR)
     n.variable("toolsdir", TOOLSDIR)
@@ -250,46 +249,39 @@ def find_files(path: str) -> List[str]:
 
     return ret
 
+OFILE_EXT_RULES = {
+    ".c" : "cc",
+    ".cpp" : "cxx",
+    ".s" : "as",
+    ".S" : "as"
+}
+
 def emit_build(n: Writer, ver: str):
     """Emits the build statements for a version to a ninja file"""
 
-    # Emit source builds
+    # Handle source files
     ofiles = []
     verflags = f"-DSPM_{ver.upper()}"
+    ldscripts = []
     for path in find_files(SRCDIR):
-        # Get output name
-        ofile = os.path.join("$builddir", ver, path + ".o")
-        ofiles.append(ofile)
-
         # Choose rule based on file extension
         _, ext = os.path.splitext(path)
-        if ext == ".c":
-            # C source code
+        if ext in OFILE_EXT_RULES:
+            ofile = os.path.join("$builddir", ver, path + ".o")
+            ofiles.append(ofile)
+            rule = OFILE_EXT_RULES[ext]
             n.build(
                 ofile,
-                rule = "cc",
+                rule = rule,
                 inputs = path,
                 variables = { "verflags" : verflags }
             )
-        elif ext == ".cpp":
-            # C++ source code
-            n.build(
-                ofile,
-                rule = "cxx",
-                inputs = path,
-                variables = { "verflags" : verflags }
-            )
-        elif ext in (".s", ".S"):
-            # Asm source code
-            n.build(
-                ofile,
-                rule = "as",
-                inputs = path
-            )
+        elif ext == ".ld":
+            ldscripts.append(path)
         else:
             assert False, f"Unknown file type {ext} for {path}"
     
-    # Get ld scripts
+    # Add symbols ld script
     symbols = os.path.join("$builddir", ver, "symbols.ld")
     lst_ver = "eu0" if ver == "eu1" else ver
     lst = os.path.join("$spm_headers", "linker", f"spm.{lst_ver}.lst")
@@ -298,10 +290,7 @@ def emit_build(n: Writer, ver: str):
         rule = "lst2ld",
         inputs = lst
     )
-    ldscripts = [
-        os.path.join("$linkdir", "ldscript.ld"),
-        symbols
-    ]
+    ldscripts.append(symbols)
 
     # Emit elf build
     elf_name = os.path.join("$outdir", f"{ver}.elf")
