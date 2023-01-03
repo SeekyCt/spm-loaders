@@ -321,7 +321,7 @@ def build_bin(n: Writer, elf_name: str, ver: str) -> str:
     """Builds a bin from an ELF for a specific version"""
 
     # Emit bin build
-    bin_name = os.path.join("$outdir", f"{ver}.bin")
+    bin_name = os.path.join("$outdir", f"{elf_name}.bin")
     n.build(
         bin_name,
         rule = "objcopy",
