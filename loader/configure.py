@@ -169,10 +169,10 @@ def emit_rules(n: Writer):
 
     # .c -> .o compilation
     # Variables to pass in:
-    #     verflags: defines for the region being compiled
+    #     flags: extra compiler flags
     n.rule(
         "cc",
-        command = "$cc -MMD -MT $out -MF $out.d $cflags -c $in -o $out",
+        command = "$cc -MMD -MT $out -MF $out.d $cflags $flags -c $in -o $out",
         depfile = "$out.d",
         deps = "gcc",
         description = "CC $out"
@@ -180,10 +180,10 @@ def emit_rules(n: Writer):
 
     # .cpp -> .o compilation
     # Variables to pass in:
-    #     verflags: defines for the region being compiled
+    #     flags: extra compiler flags
     n.rule(
         "cxx",
-        command = "$cc -MMD -MT $out -MF $out.d $cxxflags $verflags -c $in -o $out",
+        command = "$cc -MMD -MT $out -MF $out.d $cxxflags $flags -c $in -o $out",
         depfile = "$out.d",
         deps = "gcc",
         description = "CXX $out"
@@ -191,10 +191,10 @@ def emit_rules(n: Writer):
 
     # .s -> .o compilation
     # Variables to pass in:
-    #     verflags: defines for the region being compiled
+    #     flags: extra compiler flags
     n.rule(
         "as",
-        command = "$cc -MD -MT $out -MF $out.d $asflags $verflags -c $in -o $out",
+        command = "$cc -MD -MT $out -MF $out.d $asflags $flags -c $in -o $out",
         depfile = "$out.d",
         deps = "gcc",
         description = "AS $out"
@@ -274,7 +274,8 @@ OFILE_EXT_RULES = {
     ".S" : "as"
 }
 
-def build_module_elf(n: Writer, name: str, ver: str) -> str:
+def build_module_elf(n: Writer, name: str, ver: str, extraflags: str = ""
+    ) -> str:
     """Builds an ELF for a module on a specific version"""
 
     # Handle source files
@@ -292,7 +293,7 @@ def build_module_elf(n: Writer, name: str, ver: str) -> str:
                 ofile,
                 rule = rule,
                 inputs = path,
-                variables = { "verflags" : verflags }
+                variables = { "flags" : f"{verflags} {extraflags}" }
             )
         elif ext == ".ld":
             ldscripts.append(path)
