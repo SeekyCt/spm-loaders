@@ -32,7 +32,6 @@ HOOK_ADDRS = {
 PYTHON = sys.executable
 
 # Project dirs
-LINKDIR = "linker"
 BUILDDIR = "build"
 OUTDIR = "out"
 TOOLSDIR = "tools"
