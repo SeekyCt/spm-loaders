@@ -10,17 +10,11 @@
 #include <msl/stdio.h>
 #include <msl/string.h>
 
+#include "context.h"
+
 #define ALIGN_TO(val, align) (((val) + ((align)-1)) & ~((align)-1))
 
-struct LoaderContext
-{
-/* 0x00 */ char magic[4]; // RLd3
-/* 0x04 */ u32 contextVersion;
-/* 0x08 */ s32 loaderType;
-/* 0x0C */ s32 loaderVersion;
-/* 0x10 */ void * hostRelContext;
-};
-extern LoaderContext ctx;
+extern RelLoaderContext ctx;
 
 static const wii::gx::GXColor fg = {0xff, 0xff, 0xff, 0xff};
 static const wii::gx::GXColor bg = {0x00, 0x00, 0x00, 0xff};

@@ -32,6 +32,7 @@ HOOK_ADDRS = {
 PYTHON = sys.executable
 
 # Project dirs
+INCDIR = "include"
 BUILDDIR = "build"
 OUTDIR = "out"
 TOOLSDIR = "tools"
@@ -61,6 +62,7 @@ OBJCOPY = os.path.join("$devkitppc", "bin", "powerpc-eabi-objcopy")
 INCLUDES = ' '.join(
     "-I " + d
     for d in [
+        INCDIR,
         os.path.join("$spm_headers", "include"),
         os.path.join("$spm_headers", "mod"),
     ]
