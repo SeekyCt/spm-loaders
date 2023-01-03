@@ -1,5 +1,5 @@
 /*
-    Place a branch to the main function at the start of the binary
+    Place loader context & branch to the main function at binary start
 */
 
 .section .first, "ax"
