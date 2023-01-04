@@ -398,7 +398,7 @@ def main(versions: List[str]):
         gecko_name = build_gecko(n, relloader_bin, ver)
 
         # Build saveloader
-        saveloader = build_module_elf(n, "saveloader", ver, f"-DPAYLOAD_DEST=0x{BASE_ADDR}")
+        saveloader = build_module_elf(n, "saveloader", ver)
         saveloader_bin = build_bin(n, saveloader, ver)
         save_name = build_save(n, saveloader_bin, relloader_bin, ver)
 
