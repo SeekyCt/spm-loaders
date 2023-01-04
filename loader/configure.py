@@ -308,6 +308,8 @@ def build_module_elf(n: Writer, name: str, ver: str, extraflags: str = ""
             )
         elif ext == ".ld":
             ldscripts.append(path)
+        elif ext == ".h":
+            pass
         else:
             assert False, f"Unknown file type {ext} for {path}"
 
