@@ -263,6 +263,7 @@
 // more
 
 // mario_pouch.c
+// text
 8014c088:pouchGetPtr
 8014d458:pouchGetHp
 8014d468:pouchAddHp
@@ -279,6 +280,8 @@
 8014fc20:pouchCountChars
 8014fc70:pouchCountPixls
 // more
+// bss
+80511a28:mario_pouch_work
 
 // seq_logo.c
 80179140:seq_logoMain

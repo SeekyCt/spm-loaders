@@ -40,6 +40,7 @@ TOOLSDIR = "tools"
 # Project files
 LST2LD = os.path.join("$toolsdir", "lst2ld.py")
 MAKEGECKO = os.path.join("$toolsdir", "makegecko.py")
+MAKEWIIMARIO = os.path.join("$toolsdir", "makewiimario.py")
 
 # Libraries
 SPM_HEADERS = os.path.join("..", "spm-headers")
@@ -145,6 +146,7 @@ def emit_vars(n: Writer):
     n.variable("toolsdir", TOOLSDIR)
 
     n.variable("makegecko", MAKEGECKO)
+    n.variable("makewiimario", MAKEWIIMARIO)
     n.variable("lst2ld", LST2LD)
 
     # Libraries
@@ -234,6 +236,15 @@ def emit_rules(n: Writer):
         description = "makegecko $out"
     )
 
+    # relloader & saveloader .bin -> wiimario conversion
+    # Variables to pass in:
+    #    savename: name of the save file to generate
+    #    version: version of the game to build for
+    n.rule(
+        "makewiimario",
+        command = "$python $makewiimario $in \"$savename\" $version $out"
+    )
+
 def find_files(path: str) -> List[str]:
     """Finds all files recursively in a directory"""
 
@@ -321,7 +332,7 @@ def build_bin(n: Writer, elf_name: str, ver: str) -> str:
     """Builds a bin from an ELF for a specific version"""
 
     # Emit bin build
-    bin_name = os.path.join("$outdir", f"{elf_name}.bin")
+    bin_name = f"{elf_name}.bin"
     n.build(
         bin_name,
         rule = "objcopy",
@@ -334,7 +345,7 @@ def build_gecko(n: Writer, bin_name: str, ver: str) -> str:
     """Builds a gecko code from an ELF for a version"""
 
     # Emit gecko build
-    gecko_name = os.path.join("$outdir", f"{ver}.txt")
+    gecko_name = os.path.join("$outdir", "gecko", f"{ver}.txt")
     n.build(
         gecko_name,
         rule = "makegecko",
@@ -346,6 +357,22 @@ def build_gecko(n: Writer, bin_name: str, ver: str) -> str:
     )
 
     return gecko_name
+
+def build_save(n: Writer, loader_name: str, payload_name: str, ver: str) -> str:
+    """Builds a save file from an ELF for a version"""
+
+    save_name = os.path.join("$outdir", "save", f"wiimario_{ver}")
+    n.build(
+        save_name,
+        rule = "makewiimario",
+        inputs = [loader_name, payload_name],
+        variables = {
+            "savename" : f"Rel Loader 3 [{ver}]",
+            "version" : ver
+        }
+    )
+
+    return save_name
 
 def main(versions: List[str]):
     # Setup ninja
@@ -368,13 +395,19 @@ def main(versions: List[str]):
         # Build gecko code
         gecko_name = build_gecko(n, relloader_bin, ver)
 
+        # Build saveloader
+        saveloader = build_module_elf(n, "saveloader", ver, f"-DPAYLOAD_DEST=0x{BASE_ADDR}")
+        saveloader_bin = build_bin(n, saveloader, ver)
+        save_name = build_save(n, saveloader_bin, relloader_bin, ver)
+
         # Add build shortcuts
         n.build(
             ver,
             rule = "phony",
             inputs = [
                 relloader_bin,
-                gecko_name
+                gecko_name,
+                save_name
             ]
         )
         n.default(ver)

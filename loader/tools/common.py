@@ -25,3 +25,27 @@ def be32(val: int) -> bytes:
 
 def write_u32(data: bytearray, offs: int, val: int):
     struct.pack_into(">I", data, offs, val)
+
+
+def write_u16(data: bytearray, offs: int, val: int):
+    struct.pack_into(">H", data, offs, val)
+
+
+def write_bytes(data: bytearray, offs: int, val: bytes):
+    data[offs:offs+len(val)] = val
+
+
+def write_str(data: bytearray, offs: int, val: str):
+    enc = val.encode("ascii") + b"\x00"
+    write_bytes(data, offs, enc)
+
+
+def patch_context(data: bytes, loader_type: int, loader_version: int) -> bytes:
+    """Patch the context of the loader"""
+
+    data = bytearray(data)
+
+    write_u32(data, Context.OFFS_LOADER_TYPE, loader_type)
+    write_u32(data, Context.OFFS_LOADER_VERSION, loader_version)
+
+    return bytes(data)

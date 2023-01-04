@@ -1,21 +1,9 @@
 from argparse import ArgumentParser
 
-from common import be32, Context, LoaderType, write_u32
+from common import be32, Context, LoaderType, patch_context
 
 LOADER_TYPE = LoaderType.GECKO
 LOADER_VERSION = 1
-
-
-def patch_context(data: bytes) -> bytes:
-    """Patch the context of the loader"""
-
-    data = bytearray(data)
-
-    write_u32(data, Context.OFFS_LOADER_TYPE, LOADER_TYPE)
-    write_u32(data, Context.OFFS_LOADER_VERSION, LOADER_VERSION)
-
-    return bytes(data)
-
 
 def gecko_opword(opcode: int, addr: int) -> bytes:
     """Creates the opcode word of a gecko code"""
@@ -78,7 +66,7 @@ if __name__ == "__main__":
         data = f.read()
 
     # Patch header
-    data = patch_context(data)
+    data = patch_context(data, LOADER_TYPE, LOADER_VERSION)
 
     # Make code
     code = (

@@ -7,4 +7,5 @@ struct RelLoaderContext
 /* 0x08 */ s32 loaderType;
 /* 0x0C */ s32 loaderVersion;
 /* 0x10 */ void * hostRelContext;
+/* 0x14 */ u8 reserved[0x20 - 0x14];
 };
