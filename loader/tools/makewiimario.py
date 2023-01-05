@@ -2,19 +2,7 @@ from argparse import ArgumentParser
 from math import ceil
 from typing import Tuple
 
-from common import be32, patch_context, LoaderType, write_bytes, write_str, write_u16, write_u32
-
-LOADER_TYPE = LoaderType.SAVE
-LOADER_VERSION = 1
-
-"""
-Save file parts used:
-    MarioPouchWork.shopItems: fake descMsg pointer
-    MarioPouchWork.catchCards: fake descMsg string
-    MarioPouchWork.minigameScores: saveloader
-    SpmarioGlobals.gsw[0x400]+: payload (copied to main relloader address)
-"""
-
+from common import be32, LoaderType, write_bytes, write_str, write_u16, write_u32
 
 class ItemData:
     """ItemData struct constants"""
@@ -117,6 +105,17 @@ class StackFrame:
     OFFS_STR = 0x10
 
 
+LOADER_TYPE = LoaderType.SAVE
+LOADER_VERSION = 1
+
+"""
+Save file parts used:
+    MarioPouchWork.shopItems: fake descMsg pointer
+    MarioPouchWork.catchCards: fake descMsg string
+    SpmarioGlobals.gsw[0x400]+: payload
+"""
+
+
 def find_desc_msg_loc(version: str) -> Tuple[int, int]:
     """Finds an item id and offset that can be used for a fake descMsg pointer
 
@@ -140,21 +139,19 @@ def make_exploit_string(loader_addr: int) -> bytes:
     return padding + be32(loader_addr) + b"\x00"
 
 
-def patch_wiimario(spmg: bytes, pouch: bytes, loader: bytes, payload: bytes, version: str
-) -> Tuple[bytes, bytes]:
+def patch_wiimario(spmg: bytes, pouch: bytes, payload: bytes, version: str) -> Tuple[bytes, bytes]:
     spmg = bytearray(spmg)
     pouch = bytearray(pouch)
 
     # Calculate addresses and offsets
-    loader_offs = MarioPouchWork.OFFS_MINIGAME_SCORES
-    loader_addr = MarioPouchWork.ADDR[version] + loader_offs
     desc_msg_offs = MarioPouchWork.OFFS_CATCH_CARDS
     desc_msg_addr = MarioPouchWork.ADDR[version] + desc_msg_offs
     item_id, desc_msg_ptr_offs = find_desc_msg_loc(version)
     payload_offs = SpmarioGlobals.OFFS_GSW + 0x400
+    payload_addr = SpmarioGlobals.ADDR[version] + payload_offs
 
     # Write exploit string
-    desc_msg = make_exploit_string(loader_addr)
+    desc_msg = make_exploit_string(payload_addr)
     write_bytes(pouch, desc_msg_offs, desc_msg)
 
     # Write exploit string pointer
@@ -163,13 +160,8 @@ def patch_wiimario(spmg: bytes, pouch: bytes, loader: bytes, payload: bytes, ver
     # Write item id
     write_u16(pouch, MarioPouchWork.OFFS_USE_ITEMS, item_id)
 
-    # Write loader
-    write_bytes(pouch, loader_offs, loader)
-
     # Write payload
-    write_u32(spmg, payload_offs, 0x80004200) # TODO: unhardcode
-    write_u32(spmg, payload_offs + 4, len(payload))
-    write_bytes(spmg, payload_offs + 8, payload)
+    write_bytes(spmg, payload_offs, payload)
     
     # TODO: size asserts
 
@@ -178,27 +170,23 @@ def patch_wiimario(spmg: bytes, pouch: bytes, loader: bytes, payload: bytes, ver
 if __name__ == "__main__":
     hex_int = lambda x: int(x, 16)
     parser = ArgumentParser()
-    parser.add_argument("loader_path")
     parser.add_argument("payload_path")
     parser.add_argument("save_name")
     parser.add_argument("version")
     parser.add_argument("out_path")
     args = parser.parse_args()
 
-    # Get loader data
-    with open(args.loader_path, "rb") as f:
-        loader = f.read()
-
     # Get payload data
     with open(args.payload_path, "rb") as f:
         payload = f.read()
 
     # Patch header
-    payload = patch_context(payload, LOADER_TYPE, LOADER_VERSION)
+    # TODO: rework context stuff
+    # payload = patch_context(payload, LOADER_TYPE, LOADER_VERSION)
 
     spmg = SpmarioGlobals.make_default(args.save_name, "dos_01")
     pouch = MarioPouchWork.make_default()
-    spmg, pouch = patch_wiimario(spmg, pouch, loader, payload, args.version)
+    spmg, pouch = patch_wiimario(spmg, pouch, payload, args.version)
     save = SaveFile.build(spmg, pouch)
 
     # Output

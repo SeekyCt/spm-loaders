@@ -12,6 +12,7 @@ from ninja_syntax import Writer
 ###############
 
 BASE_ADDR = "80004200"
+ENTRY_ADDR = "80004220"
 HOOK_ADDRS = {
     "eu0" : "801a84d4",
     "eu1" : "801a84d4",
@@ -360,14 +361,14 @@ def build_gecko(n: Writer, bin_name: str, ver: str) -> str:
 
     return gecko_name
 
-def build_save(n: Writer, loader_name: str, payload_name: str, ver: str) -> str:
+def build_save(n: Writer, payload_name: str, ver: str) -> str:
     """Builds a save file from an ELF for a version"""
 
     save_name = os.path.join("$outdir", "save", f"wiimario_{ver}")
     n.build(
         save_name,
         rule = "makewiimario",
-        inputs = [loader_name, payload_name],
+        inputs = [payload_name],
         variables = {
             "savename" : f"Rel Loader 3 [{ver}]",
             "version" : ver
@@ -398,9 +399,16 @@ def main(versions: List[str]):
         gecko_name = build_gecko(n, relloader_bin, ver)
 
         # Build saveloader
-        saveloader = build_module_elf(n, "saveloader", ver)
+        payload_path = relloader_bin.replace('\\', '/')
+        saveflags = ' '.join([
+            f"-DPAYLOAD_DEST=0x{BASE_ADDR}",
+            f"-DPAYLOAD_ENTRY=0x{ENTRY_ADDR}",
+            f"-DPAYLOAD_HOOK=0x{HOOK_ADDRS[ver]}",
+            f"-DPAYLOAD_PATH=\"{payload_path}\""
+        ])
+        saveloader = build_module_elf(n, "saveloader", ver, saveflags)
         saveloader_bin = build_bin(n, saveloader, ver)
-        save_name = build_save(n, saveloader_bin, relloader_bin, ver)
+        save_name = build_save(n, saveloader_bin, ver)
 
         # Add build shortcuts
         n.build(
