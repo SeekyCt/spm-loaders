@@ -568,8 +568,14 @@
 // OSLink.c
 80274c0c:OSLink
 // more
-// OSReset.c
+// OSReboot.c
+// text
 80275c98:__OSReboot
+// more
+// data
+805aeb70:SaveStart
+805aeb74:SaveEnd
+// OSReset.c
 80275fd4:OSShutdownSystem
 80276198:OSRestart
 // more

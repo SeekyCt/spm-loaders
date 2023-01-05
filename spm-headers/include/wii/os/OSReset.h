@@ -4,8 +4,6 @@
 
 CPP_WRAPPER(wii::os)
 
-void __OSReboot(Unk param_1, Unk param_2);
-UNKNOWN_FUNCTION(OSGetSaveRegion);
 UNKNOWN_FUNCTION(OSRegisterShutdownFunction);
 UNKNOWN_FUNCTION(__OSCallShutdownFunctions);
 UNKNOWN_FUNCTION(__OSShutdownDevices);

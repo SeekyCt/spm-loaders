@@ -12,6 +12,7 @@
 #include <wii/os/OSInterrupt.h>
 #include <wii/os/OSModule.h>
 #include <wii/os/OSMutex.h>
+#include <wii/os/OSReboot.h>
 #include <wii/os/OSReset.h>
 #include <wii/os/OSStateTM.h>
 #include <wii/os/OSThread.h>
