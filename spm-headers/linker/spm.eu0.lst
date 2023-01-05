@@ -569,7 +569,9 @@
 80274c0c:OSLink
 // more
 // OSReset.c
+80275c98:__OSReboot
 80275fd4:OSShutdownSystem
+80276198:OSRestart
 // more
 // OSThread.c
 80277ffc:OSSuspendThread
