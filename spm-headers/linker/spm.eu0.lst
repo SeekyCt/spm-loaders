@@ -551,6 +551,10 @@
 // text
 80270c60:OSReport
 80270f78:__OSUnhandledException
+// more
+// OSExec.c
+802713e8:Run
+// OSFatal.c
 802729b8:OSFatal
 // more
 // rodata
