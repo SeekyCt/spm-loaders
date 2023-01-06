@@ -59,7 +59,7 @@ blr
 
 /*
     Stage 2
-    Execution Location: in save file
+    Execution Location: in save file (first) or lowmem (on user reboot)
     Execution Time: on __OSReboot
     Purpose: copy loader to saved region & hook dol's Run for stage 3
 
@@ -181,7 +181,7 @@ lis r12, memmove@h
 ori r12, r12, memmove@l
 mtlr r12
 blrl
-// flushCache
+// flushCache(PAYLOAD_DEST, PAYLOAD_SIZE)
 mr r3, r29
 li r4, PAYLOAD_SIZE
 bl flushCache
@@ -194,7 +194,30 @@ lis r4, PAYLOAD_ENTRY@h
 ori r4, r4, PAYLOAD_ENTRY@l
 bl writeBranch
 
-// TODO: relocate to lowmem, hook for reboot
+// Get lowmem location
+lis r28, LOADER_LOWMEM_LOCATION@h
+ori r28, r28, LOADER_LOWMEM_LOCATION@l
+
+// Copy loader to lowmem location
+// memmove(LOADER_LOWMEM_LOCATION, entry, LOADER_SIZE)
+mr r3, r28
+addi r4, r30, (entry - stage4_pic)
+li r5, LOADER_SIZE
+lis r12, memmove@h
+ori r12, r12, memmove@l
+mtlr r12
+blrl
+// flushCache(LOADER_LOWMEM_LOCATION, LOADER_SIZE)
+mr r3, r28
+li r4, LOADER_SIZE
+bl flushCache
+
+// Setup stage 2 to rerun on user reboot
+// writeBranch(__OSReboot, stage2)
+lis r3, __OSReboot@h
+ori r3, r3, __OSReboot@l
+addi r4, r28, (stage2 - entry)
+bl writeBranch
 
 // Return to Run
 .set stage4_ret, Apploader_Run + 4
