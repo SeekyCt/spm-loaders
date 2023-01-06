@@ -1,12 +1,20 @@
-#define _TOSTRING(a) #a
-#define TOSTRING(a) _TOSTRING(a)
+/*
+    SPDX-License-Identifier: GPL-3.0-or-later
+    Copyright 2020 Linus S. (aka PistonMiner)
+    Copyright 2021 Zephiles
 
-#ifdef SPM_KR0
-    .set Apploader_Run, 0x8133405C
-#else
-    .set Apploader_Run, 0x81333B28
-#endif
+    This is heavily based off of the original TTYD save exploit code by
+    PistonMiner, and Zephiles' original SPM port, slightly edited by Seeky
+*/
 
+.section .text
+.global entry
+.type entry, @function
+entry:
+
+/*
+    Command line define arguments
+*/
 #ifndef PAYLOAD_PATH
     .err
 #endif
@@ -20,13 +28,30 @@
     .err
 #endif
 
+/*
+    Run function in the apploader
+    Korean has a newer version of the apploader
+*/
+#ifdef SPM_KR0
+    .set Apploader_Run, 0x8133405C
+#else
+    .set Apploader_Run, 0x81333B28
+#endif
+
+/*
+    Constants
+*/
 .set LOADER_LOWMEM_LOCATION, 0x80005000
 .set LOADER_ARENA_LOCATION, 0x81000000
 
-.section .text
-.global entry
-.type entry, @function
-entry:
+/*
+    ABI notes:
+
+    All locations hooked at will never return to higher in the callstack,
+    so the stack, lr and non-volatile registers don't need to be preserved
+
+    The helper functions follow the ABI as normal
+*/
 
 /*
     Stage 1
@@ -104,6 +129,7 @@ lis r3, SaveEnd@ha
 stw r4, SaveEnd@l (r3)
 
 // Setup stage 3 to run
+// writeBranch(Run, LOADER_ARENA_LOCATION.stage3)
 lis r3, Run@h
 ori r3, r3, Run@l
 addi r4, r29, (stage3 - entry)
@@ -137,6 +163,7 @@ stage3_pic:
 mflr r4
 
 // Setup stage 4 to run 
+// writeBranch(Apploader_Run, stage4)
 lis r3, Apploader_Run@h
 ori r3, r3, Apploader_Run@l
 addi r4, r4, (stage4 - stage3_pic)
@@ -213,7 +240,7 @@ li r4, LOADER_SIZE
 bl flushCache
 
 // Setup stage 2 to rerun on user reboot
-// writeBranch(__OSReboot, stage2)
+// writeBranch(__OSReboot, LOADER_LOWMEM_LOCATION.stage2)
 lis r3, __OSReboot@h
 ori r3, r3, __OSReboot@l
 addi r4, r28, (stage2 - entry)
@@ -284,6 +311,9 @@ blr
 /*
     Payload
 */
+
+#define _TOSTRING(a) #a
+#define TOSTRING(a) _TOSTRING(a)
 
 payload:
 .incbin TOSTRING(PAYLOAD_PATH)
