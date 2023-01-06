@@ -137,8 +137,8 @@ bl writeBranch
 
 // Return to OSReboot
 .set stage2_ret, __OSReboot + 4
-mr r3,r30
-mr r4,r31
+mr r3, r30
+mr r4, r31
 lis r12, stage2_ret@h
 ori r12, r12, stage2_ret@l
 mtlr r12
@@ -269,7 +269,7 @@ oris r4, r4, 0x4800
 stw r4, 0 (r3)
 
 // Flush cache
-li r4,4
+li r4, 4
 b flushCache
 
 /*
@@ -302,10 +302,10 @@ mtlr r12
 blrl
 
 // Pop stack
-lmw r30,0x8(sp)
-lwz r0,0x24(sp)
+lmw r30, 0x8 (sp)
+lwz r0, 0x24 (sp)
 mtlr r0
-addi sp,sp,0x20
+addi sp, sp, 0x20
 blr
 
 /*
