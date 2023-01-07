@@ -16,15 +16,15 @@
 
 The loader creates a context struct in the reserved memory for mods to use.
 
-| Address  | Type    | Name             | Notes                                        |
-|----------|---------|------------------|----------------------------------------------|
-| 80004200 | char[4] | Magic            | ASCII 'RLd3'                                 |
-| 80004204 | u32     | Context Version  | Context version (=1)                         |
-| 80004208 | s32     | Loader Type      | See table below                              |
-| 8000420C | s32     | Loader Version   | Version of the specific loader (-1=unset)    |
-| 80004210 | void *  | Host Rel Context | If a rel is acting as a host, context for it |
-
-80004214-8000421F reserved for future use.
+| Address  | Type    | Name                   | Notes                                         |
+|----------|---------|------------------------|-----------------------------------------------|
+| 80004200 | char[4] | Magic                  | ASCII 'RLd3'                                  |
+| 80004204 | u32     | Context Version        | Context version (=1)                          |
+| 80004208 | s32     | Implementation Type    | Specific implementation type, See table below |
+| 8000420C | s32     | Implementation Version | Version of the implementaiton                 |
+| 80004210 | s32     | Rel Loader Version     | Version of the loader itself                  |
+| 80004214 | void *  | Host Rel Context       | If a rel is acting as a host, context for it  |
+| 80004218-F | Reserved for future use
 
 ### Magic
 

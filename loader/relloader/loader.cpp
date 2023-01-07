@@ -10,11 +10,9 @@
 #include <msl/stdio.h>
 #include <msl/string.h>
 
-#include "context.h"
+#include "relloader.h"
 
 #define ALIGN_TO(val, align) (((val) + ((align)-1)) & ~((align)-1))
-
-extern RelLoaderContext ctx;
 
 static const wii::gx::GXColor fg = {0xff, 0xff, 0xff, 0xff};
 static const wii::gx::GXColor bg = {0x00, 0x00, 0x00, 0xff};
@@ -26,9 +24,10 @@ static void NORETURN errorPanic(const char * file, s32 line, const char * functi
     char message[128];
     msl::stdio::sprintf(
         message,
-        "[%d %d] %s line %d (%s): failed %s with %d",
-        ctx.loaderType,
-        ctx.loaderVersion,
+        "[%d|%d|%d] %s line %d (%s):\nfailed %s with %d",
+        loaderCtx->implementationType,
+        loaderCtx->implementationVersion,
+        loaderCtx->relLoaderVersion,
         file,
         line,
         function,

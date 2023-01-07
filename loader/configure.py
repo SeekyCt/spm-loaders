@@ -229,11 +229,12 @@ def emit_rules(n: Writer):
 
     # .bin -> gecko .txt conversion
     # Variables to pass in:
-    #     hookaddr: address to insert the branch to the payload
-    #     baseaddr: address to load the bin at
+    #     dest: address to load the payload at
+    #     entry: addres to branch to in the payload
+    #     hook: address to insert the branch to the payload
     n.rule(
         "makegecko",
-        command = "$python $makegecko $hookaddr $baseaddr $in $out",
+        command = "$python $makegecko $in $dest $entry $hook $out",
         description = "makegecko $out"
     )
 
@@ -286,8 +287,14 @@ OFILE_EXT_RULES = {
     ".S" : "as"
 }
 
-def build_module_elf(n: Writer, name: str, ver: str, extraflags: str = ""
-    ) -> str:
+def build_module_elf(
+    n: Writer,
+    builddir: str,
+    outdir: str,
+    name: str,
+    ver: str,
+    extraflags: str = "",
+) -> str:
     """Builds an ELF for a module on a specific version"""
 
     # Handle source files
@@ -298,7 +305,7 @@ def build_module_elf(n: Writer, name: str, ver: str, extraflags: str = ""
         # Choose rule based on file extension
         _, ext = os.path.splitext(path)
         if ext in OFILE_EXT_RULES:
-            ofile = os.path.join("$builddir", ver, path + ".o")
+            ofile = os.path.join(builddir, path + ".o")
             ofiles.append(ofile)
             rule = OFILE_EXT_RULES[ext]
             n.build(
@@ -315,7 +322,7 @@ def build_module_elf(n: Writer, name: str, ver: str, extraflags: str = ""
             assert False, f"Unknown file type {ext} for {path}"
 
     # Emit elf build
-    elf_name = os.path.join("$outdir", f"{name}_{ver}.elf")
+    elf_name = os.path.join(outdir, f"{name}_{ver}.elf")
     map_name = f"{elf_name}.map"
     n.build(
         elf_name,
@@ -331,8 +338,33 @@ def build_module_elf(n: Writer, name: str, ver: str, extraflags: str = ""
 
     return elf_name
 
-def build_bin(n: Writer, elf_name: str, ver: str) -> str:
-    """Builds a bin from an ELF for a specific version"""
+REL_LOADER_VERSION = 1
+IMPL_RIIVO_VERSION = 1
+IMPL_GECKO_VERSION = 1
+IMPL_SAVE_VERSION = 1
+
+def build_relloader(
+    n: Writer, 
+    builddir: str,
+    outdir: str,
+    impl_type: str,
+    impl_version: str,
+    ver: str
+) -> str:
+
+    # Emit ELF build
+    elf_name = build_module_elf(
+        n,
+        builddir,
+        outdir,
+        "relloader",
+        ver,
+        ' '.join([
+            f"-DREL_LOADER_VERSION={REL_LOADER_VERSION}",
+            f"-DIMPLEMENTATION_TYPE={impl_type}",
+            f"-DIMPLEMENTATION_VERSION={impl_version}"
+        ])
+    )
 
     # Emit bin build
     bin_name = f"{elf_name}.bin"
@@ -344,38 +376,89 @@ def build_bin(n: Writer, elf_name: str, ver: str) -> str:
 
     return bin_name
 
-def build_gecko(n: Writer, bin_name: str, ver: str) -> str:
-    """Builds a gecko code from an ELF for a version"""
+def build_saveloader(
+    n: Writer, 
+    builddir: str,
+    outdir: str,
+    payload_path: str,
+    ver: str
+) -> str:
+    # Emit ELF build
+    as_safe_path = payload_path.replace('\\', '/')
+    elf_name = build_module_elf(
+        n,
+        builddir,
+        outdir,
+        "saveloader",
+        ver,
+        ' '.join([
+            f"-DPAYLOAD_PATH=\"{as_safe_path}\"",
+            f"-DPAYLOAD_DEST=0x{BASE_ADDR}",
+            f"-DPAYLOAD_ENTRY=0x{ENTRY_ADDR}",
+            f"-DPAYLOAD_HOOK=0x{HOOK_ADDRS[ver]}"
+        ])
+    )
+
+    # Emit bin build
+    bin_name = f"{elf_name}.bin"
+    n.build(
+        bin_name,
+        rule = "objcopy",
+        inputs = elf_name
+    )
+
+    return bin_name
+
+def impl_gecko(n: Writer, ver: str) -> str:
+    builddir = os.path.join("$builddir", ver, "gecko")
+    outdir = os.path.join("$outdir", ver, "gecko")
+    
+    bin_path = build_relloader(n, builddir, outdir, 0, IMPL_GECKO_VERSION, ver)
 
     # Emit gecko build
-    gecko_name = os.path.join("$outdir", "gecko", f"{ver}.txt")
+    gecko_path = os.path.join(outdir, f"gecko_{ver}.txt")
     n.build(
-        gecko_name,
+        gecko_path,
         rule = "makegecko",
-        inputs = bin_name,
+        inputs = bin_path,
         variables = {
-            "baseaddr" : BASE_ADDR,
-            "hookaddr" : HOOK_ADDRS[ver]
+            "dest" : BASE_ADDR,
+            "entry" : ENTRY_ADDR,
+            "hook" : HOOK_ADDRS[ver]
         }
     )
 
-    return gecko_name
+    return gecko_path
 
-def build_save(n: Writer, payload_name: str, ver: str) -> str:
-    """Builds a save file from an ELF for a version"""
+def impl_riivo(n: Writer, ver: str) -> str:
+    builddir = os.path.join("$builddir", ver, "riivo")
+    outdir = os.path.join("$outdir", ver, "riivo")
 
-    save_name = os.path.join("$outdir", "save", f"wiimario_{ver}")
+    bin_path = build_relloader(n, builddir, outdir, 2, IMPL_RIIVO_VERSION, ver)
+
+    return bin_path
+
+def impl_save(n: Writer, ver: str) -> str:
+    builddir = os.path.join("$builddir", ver, "save")
+    outdir = os.path.join("$outdir", ver, "save")
+
+    bin_path = build_relloader(n, builddir, outdir, 2, IMPL_SAVE_VERSION, ver)
+
+    # Build saveloader
+    saveloader = build_saveloader(n, builddir, outdir, bin_path, ver)
+
+    save_path = os.path.join(outdir, f"wiimario_{ver}")
     n.build(
-        save_name,
+        save_path,
         rule = "makewiimario",
-        inputs = [payload_name],
+        inputs = [saveloader],
         variables = {
-            "savename" : f"Rel Loader 3 [{ver}]",
+            "savename" : f"Rel Loader 3 [{ver} {REL_LOADER_VERSION} {IMPL_SAVE_VERSION}]",
             "version" : ver
         }
     )
 
-    return save_name
+    return save_path
 
 def main(versions: List[str]):
     # Setup ninja
@@ -391,33 +474,18 @@ def main(versions: List[str]):
         # Generate symbols script
         build_symbols_ld(n, ver)
 
-        # Build relloader
-        relloader = build_module_elf(n, "relloader", ver)
-        relloader_bin = build_bin(n, relloader, ver)
-        
-        # Build gecko code
-        gecko_name = build_gecko(n, relloader_bin, ver)
-
-        # Build saveloader
-        payload_path = relloader_bin.replace('\\', '/')
-        saveflags = ' '.join([
-            f"-DPAYLOAD_DEST=0x{BASE_ADDR}",
-            f"-DPAYLOAD_ENTRY=0x{ENTRY_ADDR}",
-            f"-DPAYLOAD_HOOK=0x{HOOK_ADDRS[ver]}",
-            f"-DPAYLOAD_PATH=\"{payload_path}\""
-        ])
-        saveloader = build_module_elf(n, "saveloader", ver, saveflags)
-        saveloader_bin = build_bin(n, saveloader, ver)
-        save_name = build_save(n, saveloader_bin, ver)
+        riivo_path = impl_riivo(n, ver)
+        gecko_path = impl_gecko(n, ver)
+        save_path = impl_save(n, ver)
 
         # Add build shortcuts
         n.build(
             ver,
             rule = "phony",
             inputs = [
-                relloader_bin,
-                gecko_name,
-                save_name
+                riivo_path,
+                gecko_path,
+                save_path
             ]
         )
         n.default(ver)
