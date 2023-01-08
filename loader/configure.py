@@ -7,24 +7,6 @@ from typing import List
 
 from ninja_syntax import Writer
 
-###############
-# Definitions #
-###############
-
-BASE_ADDR = "80004200"
-ENTRY_ADDR = "80004220"
-HOOK_ADDRS = {
-    "eu0" : "801a84d4",
-    "eu1" : "801a84d4",
-    # TODO
-    "us0" : "0",
-    "us1" : "0",
-    "us2" : "0",
-    "jp0" : "0",
-    "jp1" : "0",
-    "kr0" : "0",
-}
-
 #########
 # Paths #
 #########
@@ -295,13 +277,14 @@ def build_module_elf(
     outdir: str,
     name: str,
     ver: str,
-    extraflags: str = "",
+    extra_flags: str = "",
+    
 ) -> str:
     """Builds an ELF for a module on a specific version"""
 
     # Handle source files
     ofiles = []
-    verflags = f"-DSPM_{ver.upper()}"
+    ver_flags = f"-DSPM_{ver.upper()}"
     ldscripts = [get_symbols_ld(ver)]
     for path in find_files(name):
         # Choose rule based on file extension
@@ -314,7 +297,7 @@ def build_module_elf(
                 ofile,
                 rule = rule,
                 inputs = path,
-                variables = { "flags" : f"{verflags} {extraflags}" }
+                variables = { "flags" : f"{ver_flags} {extra_flags}" }
             )
         elif ext == ".ld":
             ldscripts.append(path)
@@ -339,6 +322,22 @@ def build_module_elf(
     )
 
     return elf_name
+
+# Loader Specifics #
+
+BASE_ADDR = "80004200"
+ENTRY_ADDR = "80004220"
+HOOK_ADDRS = {
+    "eu0" : "801a84d4",
+    "eu1" : "801a84d4",
+    # TODO
+    "us0" : "0",
+    "us1" : "0",
+    "us2" : "0",
+    "jp0" : "0",
+    "jp1" : "0",
+    "kr0" : "0",
+}
 
 REL_LOADER_VERSION = 1
 IMPL_RIIVO_VERSION = 1
