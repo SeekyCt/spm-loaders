@@ -81,6 +81,8 @@ MACHDEP = ' '.join([
     "-mhard-float", # Enable hardware floats
     "-nostdlib", # Don't link std lib
     "-mregnames", # Enable r prefix for registers in asm
+    "-nostdinc", # Disable including std lib headers
+    "-ffreestanding", # Tell compiler environment isn't hosted
 ])
 
 # Base C flags
@@ -89,8 +91,6 @@ CFLAGS = ' '.join([
     "$machdep",
     "$includes",
 
-    "-nostdinc", # Disable including std lib headers
-    "-ffreestanding", # Tell compiler environment isn't hosted
     "-ffunction-sections", # Allow function deadstripping
     "-fdata-sections", # Allow data deadstripping
     "-g", # Emit debug info
