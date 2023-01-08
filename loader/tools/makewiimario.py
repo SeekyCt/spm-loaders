@@ -19,6 +19,7 @@ from typing import Tuple
 Big endian binary helpers
 """
 
+
 def be32(val: int) -> bytes:
     """Converts an integer to big-endian 32-bit"""
 
@@ -41,9 +42,11 @@ def write_str(data: bytearray, offs: int, val: str):
     enc = val.encode("ascii") + b"\x00"
     write_bytes(data, offs, enc)
 
+
 """
 Game struct definitions, no exploit implementation specific logic or information
 """
+
 
 class ItemData:
     """ItemData struct constants"""
@@ -52,7 +55,15 @@ class ItemData:
     OFFS_DESC_MSG = 0x14
 
     ARRAY_ADDR = {
-        "eu0": 0x803f5f98
+        "eu0": 0x803f5f98,
+        "eu1": 0x803f5f98,
+        # TODO
+        "us0": 0,
+        "us1": 0,
+        "us2": 0,
+        "jp0": 0,
+        "jp1": 0,
+        "kr0": 0,
     }
 
 
@@ -69,7 +80,15 @@ class SpmarioGlobals:
     OFFS_COIN_ENTRIES = 0x1184
 
     ADDR = {
-        "eu0": 0x80525550
+        "eu0": 0x80525550,
+        "eu1": 0x80525550,
+        # TODO
+        "us0": 0,
+        "us1": 0,
+        "us2": 0,
+        "jp0": 0,
+        "jp1": 0,
+        "kr0": 0,
     }
 
     def make_default(name: str, map: str) -> bytes:
@@ -101,7 +120,15 @@ class MarioPouchWork:
     OFFS_MINIGAME_SCORES = 0x368
 
     ADDR = {
-        "eu0": 0x80511a28
+        "eu0": 0x80511a28,
+        "eu1": 0x80511a28,
+        # TODO
+        "us0": 0,
+        "us1": 0,
+        "us2": 0,
+        "jp0": 0,
+        "jp1": 0,
+        "kr0": 0,
     }
 
     def make_default() -> bytes:
@@ -146,9 +173,11 @@ class StackFrame:
     OFFS_LR_SAVE = SIZE + 4
     OFFS_STR = 0x10
 
+
 """
 Exploit implementation
 """
+
 
 def find_desc_msg_loc(version: str) -> Tuple[int, int]:
     """Finds an item id and offset that can be used for a fake descMsg pointer
@@ -170,7 +199,7 @@ def find_desc_msg_loc(version: str) -> Tuple[int, int]:
 
 def make_exploit_string(payload_addr: int) -> bytes:
     """Makes the string to copy onto the stack in the buffer overflow
-    
+
     This string overwrites the lr save of the stack frame above with the payload address
     """
     padding = b"\x11" * (StackFrame.OFFS_LR_SAVE - StackFrame.OFFS_STR)
@@ -204,8 +233,9 @@ def patch_wiimario(spmg: bytes, pouch: bytes, payload: bytes, version: str) -> T
 
     # Write payload
     write_bytes(spmg, payload_offs, payload)
-    
+
     return bytes(spmg), bytes(pouch)
+
 
 if __name__ == "__main__":
     hex_int = lambda x: int(x, 16)
