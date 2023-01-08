@@ -280,10 +280,10 @@ b flushCache
 flushCache:
 
 // Push stack
-stwu sp, -0x20 (sp)
+stwu r1, -0x20 (r1)
 mflr r0
-stw r0, 0x24 (sp)
-stmw r30, 0x8 (sp)
+stw r0, 0x24 (r1)
+stmw r30, 0x8 (r1)
 mr r31, r3
 mr r30, r4
 
@@ -302,10 +302,10 @@ mtlr r12
 blrl
 
 // Pop stack
-lmw r30, 0x8 (sp)
-lwz r0, 0x24 (sp)
+lmw r30, 0x8 (r1)
+lwz r0, 0x24 (r1)
 mtlr r0
-addi sp, sp, 0x20
+addi r1, r1, 0x20
 blr
 
 /*
