@@ -261,7 +261,6 @@ blr
 */
 writeBranch:
 
-// Calculate delta
 // Write instruction
 sub r4, r4, r3
 rlwinm r4, r4, 0, 6, 29
