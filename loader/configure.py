@@ -278,7 +278,7 @@ def build_module_elf(
     name: str,
     ver: str,
     extra_flags: str = "",
-    
+    extra_deps: List[str] = None
 ) -> str:
     """Builds an ELF for a module on a specific version"""
 
@@ -297,6 +297,7 @@ def build_module_elf(
                 ofile,
                 rule = rule,
                 inputs = path,
+                implicit = extra_deps or [],
                 variables = { "flags" : f"{ver_flags} {extra_flags}" }
             )
         elif ext == ".ld":
@@ -397,7 +398,8 @@ def build_saveloader(
             f"-DPAYLOAD_DEST=0x{BASE_ADDR}",
             f"-DPAYLOAD_ENTRY=0x{ENTRY_ADDR}",
             f"-DPAYLOAD_HOOK=0x{HOOK_ADDRS[ver]}"
-        ])
+        ]),
+        [payload_path]
     )
 
     # Emit bin build
