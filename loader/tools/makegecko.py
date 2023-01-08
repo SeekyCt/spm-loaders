@@ -4,6 +4,7 @@ Makes a gecko code to load and execute a statically-linked payload in RAM
 
 from argparse import ArgumentParser
 
+
 def be32(val: int) -> bytes:
     """Converts an integer to big-endian 32-bit"""
 
