@@ -97,7 +97,9 @@ CFLAGS = ' '.join([
     "-O3", # High optimisation for speed
     "-Wall", # Enable all warnings
     "-Wextra", # Enable even more warnings
+    "-Wpedantic", # Enable even more warnings than that
     "-Wshadow", # Enable variable shadowing warning
+    "-Werror" # Error on warnings
 ])
 
 # C++ flags
