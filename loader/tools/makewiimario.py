@@ -4,10 +4,10 @@ Makes a save file to load and execute a payload
 Save file parts used:
     MarioPouchWork.shopItems: fake descMsg pointer
     MarioPouchWork.catchCards: fake descMsg string
-    SpmarioGlobals.gsw[0x400]+: payload
+    SpmarioGlobals.lswf,lsw,coinEntries: payload
 
 This script makes no assumptions about the payload itself, other
-than it expecting to run from the gsw position
+than it expecting to run from the lswf position
 """
 
 from argparse import ArgumentParser
@@ -76,8 +76,11 @@ class SpmarioGlobals:
     OFFS_FRAMEBUFFER_HEIGHT = 0x1A
     OFFS_SAVE_NAME = 0x20
     OFFS_MAP_NAME = 0x44
-    OFFS_GSW = 0x544
-    OFFS_COIN_ENTRIES = 0x1184
+    OFFS_LSWF = 0xD44
+
+    SIZE_LSWF = 0x40
+    SIZE_LSW = 0x400
+    SIZE_COIN_ENTRIES = 0x900
 
     ADDR = {
         "eu0": 0x80525550,
@@ -217,8 +220,14 @@ def patch_wiimario(spmg: bytes, pouch: bytes, payload: bytes, version: str) -> T
     desc_msg_offs = MarioPouchWork.OFFS_CATCH_CARDS
     desc_msg_addr = MarioPouchWork.ADDR[version] + desc_msg_offs
     item_id, desc_msg_ptr_offs = find_desc_msg_loc(version)
-    payload_offs = SpmarioGlobals.OFFS_GSW + 0x400
-    assert payload_offs + len(payload) < SpmarioGlobals.OFFS_COIN_ENTRIES, "Payload too big"
+    payload_offs = SpmarioGlobals.OFFS_LSWF
+    assert (
+        len(payload) < (
+            SpmarioGlobals.SIZE_LSWF +
+            SpmarioGlobals.SIZE_LSW +
+            SpmarioGlobals.SIZE_COIN_ENTRIES
+        )
+    ), "Payload too big"
     payload_addr = SpmarioGlobals.ADDR[version] + payload_offs
 
     # Write exploit string
