@@ -44,26 +44,36 @@ static void NORETURN errorPanic(const char * file, s32 line, const char * functi
 
 #ifdef SPM_EU0
     #define FILENAME "eu0.rel"
+    #define HEAP spm::memory::HEAP_MEM1_UNUSED
 #elif defined SPM_EU1
     #define FILENAME "eu1.rel"
+    #define HEAP spm::memory::HEAP_MEM1_UNUSED
 #elif defined SPM_US0
     #define FILENAME "us0.rel"
+    #define HEAP spm::memory::HEAP_MAIN
 #elif defined SPM_US1
     #define FILENAME "us1.rel"
+    #define HEAP spm::memory::HEAP_MEM1_UNUSED
 #elif defined SPM_US2
     #define FILENAME "us2.rel"
+    #define HEAP spm::memory::HEAP_MEM1_UNUSED
 #elif defined SPM_JP0
     #define FILENAME "jp0.rel"
+    #define HEAP spm::memory::HEAP_MEM1_UNUSED
 #elif defined SPM_JP1
     #define FILENAME "jp1.rel"
+    #define HEAP spm::memory::HEAP_MEM1_UNUSED
 #elif defined SPM_KR0
     #define FILENAME "kr0.rel"
+    #define HEAP spm::memory::HEAP_MEM1_UNUSED
 #endif
+
+// TODO: other versions heaps
 
 static void * alloc(size_t size, u32 alignment = 0)
 {
     alignment = alignment > 0x20 ? alignment : 0x20;
-    auto handle = spm::memory::memory_wp->heapHandle[spm::memory::HEAP_MEM1_UNUSED];
+    auto handle = spm::memory::memory_wp->heapHandle[HEAP];
     return wii::mem::MEMAllocFromExpHeapEx(handle, size, alignment);
 }
 
