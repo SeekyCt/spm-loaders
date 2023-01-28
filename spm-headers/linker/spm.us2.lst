@@ -7,7 +7,7 @@
 80004000:memcpy
 80004104:memset
 80029364:mapDataPtr
-803C5098:mapDataList
+803C5098:mapData
 8002C76C:mobjNameToPtrNoAssert
 80032590:msgSearch
 80037D30:swInit
@@ -400,7 +400,7 @@
 1,1,3d494:danCountdownDone
 1,1,3d4a4:evt_dan_start_countdown
 1,1,3d4d4:danCheckKeyInMapBbox
-1,1,3d5c4:danCheckKeyEnemyInMapBbox
+1,1,3d5c4:danCheckEnemyInMapBbox
 1,1,3d6f0:evt_dan_handle_key_failsafe
 1,1,3d828:evt_dan_handle_chest_room_dokans_and_doors
 1,1,3d8d4:evt_dan_get_chest_room_item
@@ -454,6 +454,11 @@
 1,5,15ef30:dan_start_shadoo_evt
 1,5,d1958:sammerDefsCh6
 1,5,d1e08:sammerDefsEndgame
+
+// new to v9
+80142D40:marioChgMot
+80067770:fadeSetMapChangeTransition
+8023B5CC:spsndCheckBgmPlaying
 
 // new to rld3 v1
 8025C950:strcat
