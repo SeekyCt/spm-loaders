@@ -1,12 +1,12 @@
-# loader
+# spm-loaders
 
-Loader source code for the following implementations:
+Loader source code for the following rel loader implementations:
 - Gecko code
 - Save exploit
 - Riivolution (TODO)
 - Dol patch (TODO)
 
-This repo contains some generalised loader components, and a standard built off of those (which spm-core itself uses).
+This repo contains some generalised loader components, and a specific standard design built off of those.
 See [Components](#components) for details of the components, and [STANDARD.MD] for the more specific details.
 
 ## Memory Usage

@@ -26,7 +26,7 @@ MAKEGECKO = os.path.join("$toolsdir", "makegecko.py")
 MAKEWIIMARIO = os.path.join("$toolsdir", "makewiimario.py")
 
 # Libraries
-SPM_HEADERS = os.path.join("..", "spm-headers")
+SPM_HEADERS = "spm-headers"
 
 #########
 # Tools #
