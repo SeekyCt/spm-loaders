@@ -17,7 +17,9 @@
 static const wii::gx::GXColor fg = {0xff, 0xff, 0xff, 0xff};
 static const wii::gx::GXColor bg = {0x00, 0x00, 0x00, 0xff};
 
-// TODO: consider adding function names
+/*
+    Displays an error message on scree for a failed assertion
+*/
 static void NORETURN errorPanic(const char * file, s32 line, const char * function, s32 code,
                                 const char * context)
 {
@@ -37,11 +39,29 @@ static void NORETURN errorPanic(const char * file, s32 line, const char * functi
     wii::os::OSFatal(&fg, &bg, message);
 }
 
+/*
+    Calls errorPanic with automatic filename, line and function
+*/
 #define ERROR(code, context) errorPanic(__FILE__, __LINE__, __FUNCTION__, code, context)
+
+/*
+    Calls errorPanic if an error code is negative
+*/
 #define CHECK_ERROR(code, ctx) if (code < 0) ERROR(code, ctx)
+
+/*
+    Calls errorPanic if a condition isn't met
+*/
 #define CHECK_TRUE(condition, context) if (!condition) ERROR(0, context)
+
+/*
+    Calls errorPanic if a pointer is null
+*/
 #define CHECK_PTR(ptr, size, context) if (ptr == nullptr) ERROR(size, context)
 
+/*
+    Rel filename based on region and revision
+*/
 #ifdef SPM_EU0
     #define FILENAME "eu0.rel"
 #elif defined SPM_EU1
@@ -60,6 +80,10 @@ static void NORETURN errorPanic(const char * file, s32 line, const char * functi
     #define FILENAME "kr0.rel"
 #endif
 
+/*
+    Allocates memory with optional alignment
+    Uses the unused MEM1 heap if there's space, falls back to the main heap otherwise
+*/
 static void * alloc(size_t size, u32 alignment = 0)
 {
     // Enforce minimum alignment
@@ -76,6 +100,9 @@ static void * alloc(size_t size, u32 alignment = 0)
     return wii::mem::MEMAllocFromExpHeapEx(handle, size, alignment);
 }
 
+/*
+    Attempts to load the rel from the save file on the NAND
+*/
 static wii::os::RelHeader * tryNandLoad()
 {
     char path[64];
@@ -113,6 +140,9 @@ static wii::os::RelHeader * tryNandLoad()
     return rel;
 }
 
+/*
+    Attempts to load the rel file from the mod folder on the disc
+*/
 static wii::os::RelHeader * tryDvdLoad()
 {
     // Build path
@@ -140,6 +170,9 @@ static wii::os::RelHeader * tryDvdLoad()
     return rel;
 }
 
+/*
+    Main entrypoint
+*/
 extern "C" void loaderMain();
 void loaderMain()
 {
