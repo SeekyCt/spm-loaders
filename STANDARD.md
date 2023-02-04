@@ -11,11 +11,11 @@ The loader has an embedded context struct in the reserved memory for mods to use
 |----------|---------|------------------------|-----------------------------------------------|
 | 80004200 | char[4] | Magic                  | ASCII 'RLd3'                                  |
 | 80004204 | u32     | Context Version        | Context version (=1)                          |
-| 80004208 | s32     | Implementation Type    | Specific implementation type, see table below |
+| 80004208 | s32     | Implementation Type    | Specific implementation type                  |
 | 8000420C | s32     | Implementation Version | Version of the implementaiton                 |
 | 80004210 | s32     | Rel Loader Version     | Version of the loader itself                  |
 | 80004214 | void *  | Host Rel Context       | If a rel is acting as a host, context for it  |
-| 80004218-F | Reserved for future use
+| 80004218 | u8[8]   | Reserved               | Reserved for future use                       |
 
 ### Magic
 
