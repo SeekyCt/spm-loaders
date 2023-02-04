@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 
+from abc import ABC, abstractmethod
+from collections import defaultdict
+from dataclasses import dataclass
+from enum import IntEnum
 from io import StringIO
+from itertools import chain
 import os
 import sys
-from typing import List
+from typing import Dict, List, Optional, Tuple
 
 from ninja_syntax import Writer
 
-#########
-# Paths #
-#########
-
-# Python
-PYTHON = sys.executable
+##################
+# Constant Paths #
+##################
 
 # Project dirs
 INCDIR = "include"
@@ -20,23 +22,26 @@ BUILDDIR = "build"
 OUTDIR = "out"
 TOOLSDIR = "tools"
 
-# Project files
-LST2LD = os.path.join("$toolsdir", "lst2ld.py")
-MAKEGECKO = os.path.join("$toolsdir", "makegecko.py")
-MAKEWIIMARIO = os.path.join("$toolsdir", "makewiimario.py")
-
 # Libraries
 SPM_HEADERS = "spm-headers"
 
-#########
-# Tools #
-#########
+##############
+# Tool Paths #
+##############
+
+# Python
+PYTHON = sys.executable
 
 # Devkitppc
 DEVKITPPC = os.environ.get("DEVKITPPC")
 assert DEVKITPPC is not None, "Error: DEVKITPPC environment variable not set"
 CC = os.path.join("$devkitppc", "bin", "powerpc-eabi-gcc")
 OBJCOPY = os.path.join("$devkitppc", "bin", "powerpc-eabi-objcopy")
+
+# Project tools
+LST2LD = os.path.join("$toolsdir", "lst2ld.py")
+MAKEGECKO = os.path.join("$toolsdir", "makegecko.py")
+MAKEWIIMARIO = os.path.join("$toolsdir", "makewiimario.py")
 
 ##############
 # Tool Flags #
@@ -115,32 +120,33 @@ LDFLAGS = ' '.join([
     ]),
 ])
 
-#######################
-# Ninja file creation #
-#######################
+###################
+# Ninja Variables #
+###################
 
 def emit_vars(n: Writer):
     """Emits the variables to a ninja file"""
-
-    # Python
-    n.variable("python", PYTHON)
 
     # Project dirs
     n.variable("builddir", BUILDDIR)
     n.variable("outdir", OUTDIR)
     n.variable("toolsdir", TOOLSDIR)
 
-    n.variable("makegecko", MAKEGECKO)
-    n.variable("makewiimario", MAKEWIIMARIO)
-    n.variable("lst2ld", LST2LD)
-
     # Libraries
     n.variable("spm_headers", SPM_HEADERS)
+
+    # Python
+    n.variable("python", PYTHON)
 
     # Devkitppc
     n.variable("devkitppc", DEVKITPPC)
     n.variable("cc", CC)
     n.variable("objcopy", OBJCOPY)
+
+    # Project tools
+    n.variable("makegecko", MAKEGECKO)
+    n.variable("makewiimario", MAKEWIIMARIO)
+    n.variable("lst2ld", LST2LD)
 
     # Tool flags
     n.variable("includes", INCLUDES)
@@ -150,6 +156,10 @@ def emit_vars(n: Writer):
     n.variable("asflags", ASFLAGS)
     n.variable("ldflags", LDFLAGS)
     n.newline()
+
+###############
+# Ninja Rules #
+###############
 
 def emit_rules(n: Writer):
     """Emits the rules to a ninja file"""
@@ -213,12 +223,12 @@ def emit_rules(n: Writer):
 
     # .bin -> gecko .txt conversion
     # Variables to pass in:
-    #     dest: address to load the payload at
+    #     base: base address to load the payload at
     #     entry: addres to branch to in the payload
     #     hook: address to insert the branch to the payload
     n.rule(
         "makegecko",
-        command = "$python $makegecko $in $dest $entry $hook $out",
+        command = "$python $makegecko $in $base $entry $hook $out",
         description = "makegecko $out"
     )
 
@@ -231,291 +241,484 @@ def emit_rules(n: Writer):
         command = "$python $makewiimario $in \"$savename\" $version $out"
     )
 
-def find_files(path: str) -> List[str]:
-    """Finds all files recursively in a directory"""
+##################
+# Ninja Wrappers #
+##################
 
-    ret = []
-    for iname in os.listdir(path):
-        # Build full path
-        ipath = os.path.join(path, iname)
+@dataclass
+class File(ABC):
+    """A file involved in the build process"""
 
-        if os.path.isdir(ipath):
-            # Add all files within dir
-            ret.extend(find_files(ipath))
-        else:
-            # Add file
-            ret.append(ipath)
+    """Path to the file"""
+    path: str
 
-    return ret
-
-def get_symbols_ld(ver: str) -> str:
-    """Gets the symbols ld script path for a version"""
-
-    return os.path.join("$builddir", f"symbols_{ver}.ld")
-
-def build_symbols_ld(n: Writer, ver: str):
-    """Builds the symbols ld script for a version"""
-
-    lst_ver = "eu0" if ver == "eu1" else ver
-    n.build(
-        get_symbols_ld(ver),
-        rule = "lst2ld",
-        inputs = os.path.join("$spm_headers", "linker", f"spm.{lst_ver}.lst")
-    )
-
-# Ninja rule to run for a file extension
-OFILE_EXT_RULES = {
-    ".c" : "cc",
-    ".cpp" : "cxx",
-    ".s" : "as",
-    ".S" : "as"
-}
-
-def build_module_elf(
-    n: Writer,
-    builddir: str,
-    outdir: str,
-    name: str,
-    ver: str,
-    extra_flags: str = "",
-    extra_deps: List[str] = None
-) -> str:
-    """Builds an ELF for a module on a specific version"""
-
-    # Handle source files
-    ofiles = []
-    ver_flags = f"-DSPM_{ver.upper()}"
-    ldscripts = [get_symbols_ld(ver)]
-    for path in find_files(name):
-        # Choose rule based on file extension
-        _, ext = os.path.splitext(path)
-        if ext in OFILE_EXT_RULES:
-            ofile = os.path.join(builddir, path + ".o")
-            ofiles.append(ofile)
-            rule = OFILE_EXT_RULES[ext]
-            n.build(
-                ofile,
-                rule = rule,
-                inputs = path,
-                implicit = extra_deps or [],
-                variables = { "flags" : f"{ver_flags} {extra_flags}" }
-            )
-        elif ext == ".ld":
-            ldscripts.append(path)
-        elif ext == ".h":
-            pass
-        else:
-            assert False, f"Unknown file type {ext} for {path}"
-
-    # Emit elf build
-    elf_name = os.path.join(outdir, f"{name}_{ver}.elf")
-    map_name = f"{elf_name}.map"
-    n.build(
-        elf_name,
-        rule = "ld",
-        inputs = ofiles,
-        implicit = ldscripts,
-        implicit_outputs = map_name,
-        variables = {
-            "map" : map_name,
-            "ldscripts" : [f"-T{ld}" for ld in ldscripts]
-        }
-    )
-
-    return elf_name
-
-# Loader Specifics #
-
-BASE_ADDR = "80004200"
-ENTRY_ADDR = "80004220"
-HOOK_ADDRS = {
-    "eu0" : "801a84d4",
-    "eu1" : "801a84d4",
-    # TODO
-    "us0" : "801a7734",
-    "us1" : "0",
-    "us2" : "0",
-    "jp0" : "0",
-    "jp1" : "0",
-    "kr0" : "0",
-}
-
-REL_LOADER_VERSION = 1
-IMPL_RIIVO_VERSION = 1
-IMPL_GECKO_VERSION = 1
-IMPL_SAVE_VERSION = 1
-
-def build_relloader(
-    n: Writer, 
-    builddir: str,
-    outdir: str,
-    impl_type: str,
-    impl_version: str,
-    ver: str
-) -> str:
-
-    # Emit ELF build
-    elf_name = build_module_elf(
-        n,
-        builddir,
-        outdir,
-        "relloader",
-        ver,
-        ' '.join([
-            f"-DREL_LOADER_VERSION={REL_LOADER_VERSION}",
-            f"-DIMPLEMENTATION_TYPE={impl_type}",
-            f"-DIMPLEMENTATION_VERSION={impl_version}"
-        ])
-    )
-
-    # Emit bin build
-    bin_name = f"{elf_name}.bin"
-    n.build(
-        bin_name,
-        rule = "objcopy",
-        inputs = elf_name
-    )
-
-    return bin_name
-
-def build_saveloader(
-    n: Writer, 
-    builddir: str,
-    outdir: str,
-    payload_path: str,
-    ver: str
-) -> str:
-    # Emit ELF build
-    as_safe_path = payload_path.replace('\\', '/')
-    elf_name = build_module_elf(
-        n,
-        builddir,
-        outdir,
-        "saveloader",
-        ver,
-        ' '.join([
-            f"-DPAYLOAD_PATH=\"{as_safe_path}\"",
-            f"-DPAYLOAD_DEST=0x{BASE_ADDR}",
-            f"-DPAYLOAD_ENTRY=0x{ENTRY_ADDR}",
-            f"-DPAYLOAD_HOOK=0x{HOOK_ADDRS[ver]}"
-        ]),
-        [payload_path]
-    )
-
-    # Emit bin build
-    bin_name = f"{elf_name}.bin"
-    n.build(
-        bin_name,
-        rule = "objcopy",
-        inputs = elf_name
-    )
-
-    return bin_name
-
-def impl_gecko(n: Writer, ver: str) -> str:
-    builddir = os.path.join("$builddir", ver, "gecko")
-    outdir = os.path.join("$outdir", ver, "gecko")
+    """Whether the build statement for the file has been emitted"""
+    _built = False
     
-    bin_path = build_relloader(n, builddir, outdir, 0, IMPL_GECKO_VERSION, ver)
+    @abstractmethod
+    def _build(self, n: Writer):
+        """Emits the build statement for this file"""
 
-    # Emit gecko build
-    gecko_path = os.path.join(outdir, f"gecko_{ver}.txt")
-    n.build(
-        gecko_path,
-        rule = "makegecko",
-        inputs = bin_path,
-        variables = {
-            "dest" : BASE_ADDR,
-            "entry" : ENTRY_ADDR,
-            "hook" : HOOK_ADDRS[ver]
-        }
+        pass
+
+    def build(self, n: Writer):
+        """Emits the build statement for this file if not already done"""
+
+        if not self._built:
+            self._built = True
+            self._build(n)
+
+
+"""Variables to pass into a ninja build statement"""
+NinjaVars = Dict[str, str]
+
+
+@dataclass
+class SourceFile(File):
+    """An existing source file - build method stubbed"""
+
+    """File extensions to ignore in collect"""
+    IGNORE_EXTENSIONS = [".h"]
+
+    """A collection of files grouped by file extension"""
+    FilesByExtension = Dict[str, List[File]]
+
+    @classmethod
+    def collect_files(cls, dir_path: str, variables: Optional[NinjaVars] = None
+                     ) -> Tuple[List["CompilableSourceFile"], FilesByExtension]:
+        """Finds all files recursively in a directory
+        
+        Files with known rules are returned as CompilableSourceFile instances
+        Other files are returned in a FilesByExtension dictionary"""
+
+        sources = []
+        other = defaultdict(list)
+        for name in os.listdir(dir_path):
+            # Build full path
+            path = os.path.join(dir_path, name)
+
+            if os.path.isdir(path):
+                # Add files from directory
+                new_sources, new_other = cls.collect_files(path, variables)
+                sources.extend(new_sources)
+                other |= new_other
+            else:
+                # Split file extension
+                _, ext = os.path.splitext(name)
+
+                # Add file based on extension
+                if CompilableSourceFile.is_compilable(ext):
+                    sources.append(CompilableSourceFile(path, variables))
+                else:
+                    other[ext].append(SourceFile(path))
+
+        return sources, other
+
+    def _build(self, n: Writer):
+        """Dummy - this file will always exist"""
+
+        print("Exists - ", self.path)
+
+@dataclass
+class CompilableSourceFile(SourceFile):
+    """A source file which can be compiled"""
+
+    """Variables to pass into build"""
+    variables: Optional[NinjaVars] = None
+
+    """Extra implicit dependencies of the built source file"""
+    extra_deps: Optional[List[File]] = None
+
+    """Mapping of compilable file extensions to build rules"""
+    EXTENSIONS = {
+        ".c" : "cc",
+        ".cpp" : "cxx",
+        ".s" : "as",
+        ".S" : "as",
+    }
+
+    @classmethod
+    def is_compilable(cls, ext: str) -> bool:
+        """Checks whether a rule is known to compile an extension"""
+        return ext in cls.EXTENSIONS
+
+    def get_built(self, builddir: str) -> "BuiltFile":
+        """Get the BuiltFile for this source file"""
+
+        # Get dest path
+        dest = os.path.join(builddir, self.path + ".o")
+
+        # Get rule
+        _, ext = os.path.splitext(self.path)
+        rule = self.EXTENSIONS[ext]
+
+        return BuiltFile(dest, rule, [self], self.variables, self.extra_deps)
+
+@dataclass
+class BuiltFile(File):
+    """A file produced in the build process"""
+
+    """Rule to build this file with"""
+    rule: str
+
+    """Sources this file requires to build"""
+    sources: List[File]
+
+    """Variables to build with"""
+    variables: Optional[Dict[str, str]] = None
+
+    """Implicit dependencies for this file"""
+    extra_deps: Optional[List[File]] = None
+
+    def _build(self, n: Writer):
+        print("Build - ", self.path, [s.path for s in self.sources])
+
+        # Build dependencies
+        for source in chain(self.sources, self.extra_deps or []):
+            source.build(n)
+
+        # Emit build statement
+        n.build(
+            self.path,
+            rule = self.rule,
+            inputs = [s.path for s in self.sources],
+            implicit = [d.path for d in self.extra_deps or []],
+            variables = self.variables,
+        )
+
+def build_elf(dest: str, map_dest: str, sources: List["CompilableSourceFile"], builddir: str,
+              ldscripts: Optional[List[File]] = None, extra_deps: Optional[List[File]] = None):
+    """Builds an ELF file from a list of sources"""
+
+    # Get object files for all sources
+    ofiles = [source.get_built(builddir) for source in sources]
+
+    # Make build
+    return BuiltFile(
+        dest,
+        "ld",
+        ofiles,
+        {
+            "map" : map_dest,
+            "ldscripts" : ' '.join([f"-T{ld.path}" for ld in ldscripts or []])
+        },
+        (extra_deps or []) + (ldscripts or [])
     )
 
-    return gecko_path
+#####################
+# Project Specifics #
+#####################
 
-def impl_riivo(n: Writer, ver: str) -> str:
-    builddir = os.path.join("$builddir", ver, "riivo")
-    outdir = os.path.join("$outdir", ver, "riivo")
+class GameVersion:
+    """Information for a version of the game"""
 
-    bin_path = build_relloader(n, builddir, outdir, 2, IMPL_RIIVO_VERSION, ver)
+    """Name of the version (rgX region rg revision X)"""
+    name: str
 
-    return bin_path
+    """LST for this version's symbols"""
+    lst: File
 
-def impl_save(n: Writer, ver: str) -> str:
-    builddir = os.path.join("$builddir", ver, "save")
-    outdir = os.path.join("$outdir", ver, "save")
+    """Linker script for this version's symbols"""
+    ldscript: File
 
-    bin_path = build_relloader(n, builddir, outdir, 2, IMPL_SAVE_VERSION, ver)
+    """Preprocessor define for this version"""
+    define: str
 
-    # Build saveloader
-    saveloader = build_saveloader(n, builddir, outdir, bin_path, ver)
+    def __init__(self, name: str, ldscript_dest: str):
+        # Save name
+        self.name = name
 
-    save_path = os.path.join(outdir, f"wiimario_{ver}")
-    n.build(
-        save_path,
-        rule = "makewiimario",
-        inputs = [saveloader],
-        variables = {
-            "savename" : f"Rel Loader 3 [{ver} {REL_LOADER_VERSION} {IMPL_SAVE_VERSION}]",
-            "version" : ver
-        }
-    )
+        # Get preprocessor define
+        self.define = f"SPM_{self.name.upper()}"
 
-    return save_path
+        # Get lst file
+        lst_name = "eu0" if name == "eu1" else name
+        self.lst = SourceFile(
+            os.path.join("$spm_headers", "linker", f"spm.{lst_name}.lst")
+        )
 
-def main(versions: List[str]):
-    # Setup ninja
+        # Get linker script
+        self.ldscript = BuiltFile(
+            ldscript_dest,
+            "lst2ld",
+            [self.lst]
+        )
+
+class Payload(ABC):
+    """A payload's properties"""
+
+    # Set by subclass
+    base_addr: int
+    entry_addr: int
+    hook_addrs: Dict[str, int]
+    version: int
+
+    @abstractmethod
+    def get_built(self, dest: str, builddir: str, game_ver: GameVersion,
+                  impl_type: "ImplementationType", impl_version: int) -> BuiltFile:
+        """Get the BuiltFile for an implementation"""
+
+        raise NotImplementedError
+    
+    def get_hook_addr(self, game_ver: GameVersion) -> int:
+        return self.hook_addrs[game_ver.name]
+
+class RelLoader(Payload):
+    """Rel Loader payload"""
+
+    base_addr = 0x8000_4200
+    entry_addr = base_addr + 0x20
+    hook_addrs = {
+        "eu0" : 0x801a84d4,
+        "eu1" : 0x801a84d4,
+        "us0" : 0x801a7734,
+        # TODO
+        "us1" : 0,
+        "us2" : 0,
+        "jp0" : 0,
+        "jp1" : 0,
+        "kr0" : 0,
+    }
+    version = 1
+
+    SRCDIR = "relloader"
+
+    def get_built(self, dest: str, builddir: str, game_ver: GameVersion,
+                   impl_type: "ImplementationType", impl_version: int) -> BuiltFile:
+        # Setup source files
+        sources, other = SourceFile.collect_files(
+            self.SRCDIR,
+            {
+                "flags" : ' '.join([
+                    f"-D{game_ver.define}",
+                    f"-DREL_LOADER_VERSION={self.version}",
+                    f"-DIMPLEMENTATION_TYPE={impl_type}",
+                    f"-DIMPLEMENTATION_VERSION={impl_version}"
+                ])
+            }
+        )
+        ldscripts = other.pop(".ld") if ".ld" in other else []
+        assert len(other) == 0, f"Unsupported files in {self.SRCDIR} {other}"
+
+        ldscripts.append(game_ver.ldscript)
+
+        # Make ELF
+        elf_path = os.path.join(builddir, "relloader.elf")
+        map_path = elf_path + ".map"
+        elf = build_elf(elf_path, map_path, sources, builddir, ldscripts)
+
+        # Make bin
+        return BuiltFile(
+            dest,
+            "objcopy",
+            [elf]
+        )
+
+class ImplementationType(IntEnum):
+    GECKO_CODE = 0
+    DOL_PATCH = 1
+    RIIVOLUTION = 2
+    SAVE_EXPLOIT = 3
+
+class Implementation(ABC):
+    """An implementation's properties"""
+
+    file: BuiltFile
+
+    # Set by subclass
+    type: ImplementationType
+    version: int
+
+    def __init__(self, dest: str, builddir: str, payload: Payload, game_ver: GameVersion):
+        self.file = self._get_built(dest, builddir, payload, game_ver)
+    
+    @abstractmethod
+    def _get_built(self, dest: str, builddir: str, payload: Payload, game_ver: GameVersion) -> BuiltFile:
+        """Get the BuiltFile for this implementation"""
+
+        raise NotImplementedError
+
+class ImplGecko(Implementation):
+    """Gecko Code loader implementation"""
+
+    type = ImplementationType.GECKO_CODE
+    version = 1
+
+    def _get_built(self, dest: str, builddir: str, payload: Payload, game_ver: GameVersion) -> BuiltFile:
+        """Get the BuiltFile for this implementation"""
+
+        # Make payload
+        payload_path = os.path.join(builddir, "payload.bin")
+        payload_built = payload.get_built(payload_path, builddir, game_ver, self.type, self.version)
+
+        return BuiltFile(
+            dest,
+            "makegecko",
+            [payload_built],
+            {
+                "base" : hex(payload.base_addr),
+                "entry" : hex(payload.entry_addr),
+                "hook" : hex(payload.get_hook_addr(game_ver))
+            }
+        )
+
+class ImplRiivo(Implementation):
+    """Riivolution loader implementation"""
+
+    version = 1
+    type = ImplementationType.RIIVOLUTION
+
+    def _get_built(self, dest: str, builddir: str, payload: Payload, game_ver: GameVersion) -> BuiltFile:
+        payload_built = payload.get_built(dest, builddir, game_ver, self.type, self.version)
+
+        return payload_built
+
+    # TODO
+
+class ImplSave(Implementation):
+    """Specific details of the save exploit implementation
+    
+    Detailed in README.md"""
+
+    version = 1
+    type = ImplementationType.SAVE_EXPLOIT
+
+    SRCDIR = "saveloader"
+    
+    def _get_saveloader(self, dest: str, builddir: str, payload: Payload, game_ver: GameVersion) -> BuiltFile:
+        # Make payload
+        payload_path = os.path.join(builddir, "payload.bin")
+        payload_built = payload.get_built(payload_path, builddir, game_ver, self.type, self.version)
+
+        # Setup source files
+        as_safe_path = payload_built.path.replace('\\', '/')
+        source = CompilableSourceFile(
+            os.path.join(self.SRCDIR, "saveloader.s"),
+            {
+                "flags" : ' '.join([
+                    f"-D{game_ver.define}",
+                    f"-DPAYLOAD_PATH=\"{as_safe_path}\"",
+                    f"-DPAYLOAD_DEST=0x{payload.base_addr:x}",
+                    f"-DPAYLOAD_ENTRY=0x{payload.entry_addr:x}",
+                    f"-DPAYLOAD_HOOK=0x{payload.get_hook_addr(game_ver):x}"
+                ])
+            },
+            [payload_built]
+        )
+
+        # Make ELF
+        elf_path = os.path.join(builddir, "saveloader.elf")
+        map_path = elf_path + ".map"
+        elf = build_elf(
+            elf_path,
+            map_path,
+            [source],
+            builddir,
+            [game_ver.ldscript],
+            [payload_built]
+        )
+
+        # Make bin
+        return BuiltFile(
+            dest,
+            "objcopy",
+            [elf]
+        )
+
+    def _get_built(self, dest: str, builddir: str, payload: Payload, game_ver: GameVersion) -> BuiltFile:
+        # Make saveloader
+        saveloader_path = os.path.join(builddir, "saveloader.bin")
+        saveloader = self._get_saveloader(saveloader_path, builddir, payload, game_ver)
+
+        # Make save file
+        return BuiltFile(
+            dest,
+            "makewiimario",
+            [saveloader],
+            {
+                "savename" : f"Rel Loader 3 {game_ver.name} [{payload.version} {self.version}]",
+                "version" : game_ver.name
+            }
+        )
+
+def main(versions: List[GameVersion]):
     outbuf = StringIO()
     n = Writer(outbuf)
     n.variable("ninja_required_version", "1.3")
     n.newline()
 
-    # Emit
     emit_vars(n)
     emit_rules(n)
-    for ver in versions:
-        # Generate symbols script
-        build_symbols_ld(n, ver)
 
-        riivo_path = impl_riivo(n, ver)
-        gecko_path = impl_gecko(n, ver)
-        save_path = impl_save(n, ver)
+    for game_ver in versions:
+        builddir = os.path.join("$builddir", game_ver.name)
+        relloader = RelLoader()
+        impl_save = ImplSave(
+            os.path.join("$outdir", f"wiimario_{game_ver.name}"),
+            os.path.join(builddir, "save"),
+            relloader,
+            game_ver
+        )
+        impl_save.file.build(n)
+        n.default(impl_save.file.path)
 
-        # Add build shortcuts
+        impl_gecko = ImplGecko(
+            os.path.join("$outdir", f"gecko_{game_ver.name}.txt"),
+            os.path.join(builddir, "gecko"),
+            relloader,
+            game_ver
+        )
+        impl_gecko.file.build(n)
+        n.default(impl_gecko.file.path)
+
+        impl_riivo = ImplRiivo(
+            os.path.join("$outdir", f"relloader_{game_ver.name}.bin"),
+            os.path.join(builddir, "riivo"),
+            relloader,
+            game_ver
+        )
+        impl_riivo.file.build(n)
+        n.default(impl_riivo.file.path)
+
         n.build(
-            ver,
-            rule = "phony",
-            inputs = [
-                riivo_path,
-                gecko_path,
-                save_path
+            game_ver.name,
+            rule="phony",
+            inputs=[
+                impl_gecko.file.path,
+                impl_save.file.path,
+                impl_riivo.file.path
             ]
         )
-        n.default(ver)
 
     # Write to file
     with open("build.ninja", 'w') as f:
         f.write(outbuf.getvalue())
     n.close()
 
-versions = [
-    "eu0",
-    "eu1",
-    "jp0",
-    "jp1",
-    "us0",
-    "us1",
-    "us2",
-    "kr0",
-]
+game_versions = {
+    name : GameVersion(
+        name,
+        os.path.join("$builddir", name, "symbols.ld")
+    )
+    for name in [
+        "eu0",
+        "eu1",
+        "us0",
+        "us1",
+        "us2",
+        "jp0",
+        "jp1",
+        "kr0"        
+    ]
+}
 
-if __name__=="__main__":
+if __name__ == "__main__":
     # Enable versions passed in comand line, default to all
-    target_versions = sys.argv[1:]
-    for v in target_versions:
-        assert v in versions, f"Unknown version {v}"
+    target_versions = []
+    for ver in sys.argv[1:]:
+        target_versions.append(game_versions[ver])
     if len(target_versions) == 0:
-        target_versions = versions
+        target_versions = [game_versions[ver] for ver in game_versions]
 
     # Make script
     main(target_versions)
