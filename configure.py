@@ -235,10 +235,10 @@ def emit_rules(n: Writer):
     # relloader & saveloader .bin -> wiimario conversion
     # Variables to pass in:
     #    savename: name of the save file to generate
-    #    version: version of the game to build for
+    #    game_ver: version of the game to build for
     n.rule(
         "makewiimario",
-        command = "$python $makewiimario $in \"$savename\" $version $out"
+        command = "$python $makewiimario $in \"$savename\" $game_ver $out"
     )
 
 ##################
@@ -637,11 +637,11 @@ class ImplSave(Implementation):
             [saveloader],
             {
                 "savename" : f"Rel Loader 3 {game_ver.name} [{payload.version} {self.version}]",
-                "version" : game_ver.name
+                "game_ver" : game_ver.name
             }
         )
 
-def main(versions: List[GameVersion]):
+def main(game_versions: List[GameVersion]):
     outbuf = StringIO()
     n = Writer(outbuf)
     n.variable("ninja_required_version", "1.3")
@@ -650,7 +650,7 @@ def main(versions: List[GameVersion]):
     emit_vars(n)
     emit_rules(n)
 
-    for game_ver in versions:
+    for game_ver in game_versions:
         builddir = os.path.join("$builddir", game_ver.name)
         relloader = RelLoader()
         impl_save = ImplSave(
