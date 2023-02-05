@@ -1,6 +1,10 @@
 """
 Makes a save file to load and execute a payload
 
+Note that a payload here is just a flat binary which starts execution
+from its beginning address (such as saveloader), not the payload format
+used by the rest of the repo. TODO: rename?
+
 Save file parts used:
     MarioPouchWork.shopItems: fake descMsg pointer
     MarioPouchWork.catchCards: fake descMsg string

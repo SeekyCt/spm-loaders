@@ -103,6 +103,7 @@ CXXFLAGS = ' '.join([
 # Passed only to asm compilation
 ASFLAGS = ' '.join([
     "$machdep",
+    "$includes",
 
     "-x assembler-with-cpp", # Enable C preprocessor
 ])
@@ -222,13 +223,9 @@ def emit_rules(n: Writer):
     )
 
     # .bin -> gecko .txt conversion
-    # Variables to pass in:
-    #     base: base address to load the payload at
-    #     entry: addres to branch to in the payload
-    #     hook: address to insert the branch to the payload
     n.rule(
         "makegecko",
-        command = "$python $makegecko $in $base $entry $hook $out",
+        command = "$python $makegecko $in $out",
         description = "makegecko $out"
     )
 
@@ -451,7 +448,6 @@ class Payload(ABC):
     base_addr: int
     entry_addr: int
     hook_addrs: Dict[str, int]
-    version: int
 
     @abstractmethod
     def get_built(self, dest: str, builddir: str, game_ver: GameVersion,
@@ -463,7 +459,7 @@ class Payload(ABC):
     def get_hook_addr(self, game_ver: GameVersion) -> int:
         return self.hook_addrs[game_ver.name]
 
-class RelLoader(Payload):
+class RelLoader3(Payload):
     """Rel Loader payload"""
 
     base_addr = 0x8000_4200
@@ -479,9 +475,8 @@ class RelLoader(Payload):
         "jp1" : 0,
         "kr0" : 0,
     }
-    version = 1
 
-    SRCDIR = "relloader"
+    SRCDIR = "relloader3"
 
     def get_built(self, dest: str, builddir: str, game_ver: GameVersion,
                    impl_type: "ImplementationType", impl_version: int) -> BuiltFile:
@@ -491,7 +486,6 @@ class RelLoader(Payload):
             {
                 "flags" : ' '.join([
                     f"-D{game_ver.define}",
-                    f"-DREL_LOADER_VERSION={self.version}",
                     f"-DIMPLEMENTATION_TYPE={impl_type}",
                     f"-DIMPLEMENTATION_VERSION={impl_version}"
                 ])
@@ -503,7 +497,7 @@ class RelLoader(Payload):
         ldscripts.append(game_ver.ldscript)
 
         # Make ELF
-        elf_path = os.path.join(builddir, "relloader.elf")
+        elf_path = os.path.join(builddir, "relloader3.elf")
         map_path = elf_path + ".map"
         elf = build_elf(elf_path, map_path, sources, builddir, ldscripts)
 
@@ -554,12 +548,7 @@ class ImplGecko(Implementation):
         return BuiltFile(
             dest,
             "makegecko",
-            [payload_built],
-            {
-                "base" : hex(payload.base_addr),
-                "entry" : hex(payload.entry_addr),
-                "hook" : hex(payload.get_hook_addr(game_ver))
-            }
+            [payload_built]
         )
 
 class ImplRiivo(Implementation):
@@ -597,10 +586,7 @@ class ImplSave(Implementation):
             {
                 "flags" : ' '.join([
                     f"-D{game_ver.define}",
-                    f"-DPAYLOAD_PATH=\"{as_safe_path}\"",
-                    f"-DPAYLOAD_DEST=0x{payload.base_addr:x}",
-                    f"-DPAYLOAD_ENTRY=0x{payload.entry_addr:x}",
-                    f"-DPAYLOAD_HOOK=0x{payload.get_hook_addr(game_ver):x}"
+                    f"-DPAYLOAD_PATH=\"{as_safe_path}\""
                 ])
             },
             [payload_built]
@@ -636,7 +622,7 @@ class ImplSave(Implementation):
             "makewiimario",
             [saveloader],
             {
-                "savename" : f"Rel Loader 3 {game_ver.name} [{payload.version} {self.version}]",
+                "savename" : f"Rel Loader 3 {game_ver.name} v{self.version}",
                 "game_ver" : game_ver.name
             }
         )
@@ -652,7 +638,7 @@ def main(game_versions: List[GameVersion]):
 
     for game_ver in game_versions:
         builddir = os.path.join("$builddir", game_ver.name)
-        relloader = RelLoader()
+        relloader = RelLoader3()
         impl_save = ImplSave(
             os.path.join("$outdir", f"wiimario_{game_ver.name}"),
             os.path.join(builddir, "save"),
@@ -672,7 +658,7 @@ def main(game_versions: List[GameVersion]):
         n.default(impl_gecko.file.path)
 
         impl_riivo = ImplRiivo(
-            os.path.join("$outdir", f"relloader_{game_ver.name}.bin"),
+            os.path.join("$outdir", f"relloader3_{game_ver.name}.bin"),
             os.path.join(builddir, "riivo"),
             relloader,
             game_ver

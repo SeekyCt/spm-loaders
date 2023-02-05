@@ -10,9 +10,18 @@
 #include <msl/stdio.h>
 #include <msl/string.h>
 
+#include "payload.h"
 #include "relloader.h"
 
+namespace relloader3 {
+
 #define ALIGN_TO(val, align) (((val) + ((align)-1)) & ~((align)-1))
+
+extern "C" {
+
+RelLoaderContext loaderCtx;
+
+}
 
 static const wii::gx::GXColor fg = {0xff, 0xff, 0xff, 0xff};
 static const wii::gx::GXColor bg = {0x00, 0x00, 0x00, 0xff};
@@ -27,9 +36,9 @@ static void NORETURN errorPanic(const char * file, s32 line, const char * functi
     msl::stdio::sprintf(
         message,
         "[%d|%d|%d] %s line %d (%s):\nfailed %s with %d",
-        loaderCtx->implementationType,
-        loaderCtx->implementationVersion,
-        loaderCtx->relLoaderVersion,
+        payloadHeader->implementationType,
+        payloadHeader->implementationVersion,
+        payloadHeader->payloadVersion,
         file,
         line,
         function,
@@ -195,4 +204,6 @@ void loaderMain()
 
     // Call prolog
     rel->prolog();
+}
+
 }

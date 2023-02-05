@@ -7,26 +7,12 @@
     PistonMiner, and Zephiles' original SPM port, slightly edited by Seeky
 */
 
+#include "payloadoffs.inc"
+
 .section .text
 .global entry
 .type entry, @function
 entry:
-
-/*
-    Command line define arguments
-*/
-#ifndef PAYLOAD_PATH
-    .err
-#endif
-#ifndef PAYLOAD_DEST
-    .err
-#endif
-#ifndef PAYLOAD_ENTRY
-    .err
-#endif
-#ifndef PAYLOAD_HOOK
-    .err
-#endif
 
 /*
     Run function in the apploader
@@ -195,30 +181,24 @@ bl stage4_pic
 stage4_pic:
 mflr r30
 
-// Get payload dest
-lis r29, PAYLOAD_DEST@h
-ori r29, r29, PAYLOAD_DEST@l
-
 // Put payload in place
-// memmove(PAYLOAD_DEST, payload, PAYLOAD_SIZE)
-mr r3, r29
+// memmove(payload.load_addr, payload, PAYLOAD_SIZE)
+lwz r3, (payload - stage4_pic)+OFFS_PAYLOAD_LOAD_ADDRESS (r30)
 addi r4, r30, (payload - stage4_pic)
 li r5, PAYLOAD_SIZE
 lis r12, memmove@h
 ori r12, r12, memmove@l
 mtlr r12
 blrl
-// flushCache(PAYLOAD_DEST, PAYLOAD_SIZE)
-mr r3, r29
+// flushCache(payload.load_addr, PAYLOAD_SIZE)
+lwz r3, (payload - stage4_pic)+OFFS_PAYLOAD_LOAD_ADDRESS (r30)
 li r4, PAYLOAD_SIZE
 bl flushCache
 
 // Write payload hook
-// writeBranch(PAYLOAD_HOOK, PAYLOAD_ENTRY)
-lis r3, PAYLOAD_HOOK@h
-ori r3, r3, PAYLOAD_HOOK@l
-lis r4, PAYLOAD_ENTRY@h
-ori r4, r4, PAYLOAD_ENTRY@l
+// writeBranch(payload.hook_addr, payload.entrypoint)
+lwz r3, (payload - stage4_pic)+OFFS_PAYLOAD_HOOK_ADDRESS (r30)
+lwz r4, (payload - stage4_pic)+OFFS_PAYLOAD_ENTRYPOINT (r30)
 bl writeBranch
 
 // Get lowmem location

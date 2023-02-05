@@ -3,6 +3,43 @@ Makes a gecko code to load and execute a statically-linked payload in RAM
 """
 
 from argparse import ArgumentParser
+import struct
+
+
+class Payload:
+    data: bytes
+
+    payload_magic: int
+    payload_ver: int
+    context: int
+    load_addr: int
+    entrypoint: int
+    hook_addr: int
+    impl_type: int
+    impl_ver: int
+
+    HEADER_SIZE = 0x28
+
+    def __init__(self, path: str):
+        with open(path, 'rb') as f:
+            self.data = f.read()
+
+        (
+            header_magic, header_ver, payload_magic, payload_ver, context, load_addr, entrypoint,
+            hook_addr, impl_type, impl_ver
+        ) = struct.unpack(">4sI4sIIIIIII", self.data[:self.HEADER_SIZE])
+
+        assert header_magic == b"SPMP"
+        assert header_ver == 1
+
+        self.payload_magic = payload_magic
+        self.payload_ver = payload_ver
+        self.context = context
+        self.load_addr = load_addr
+        self.entrypoint = entrypoint
+        self.hook_addr = hook_addr
+        self.impl_type = impl_type
+        self.impl_ver = impl_ver
 
 
 def be32(val: int) -> bytes:
@@ -18,15 +55,13 @@ def gecko_opword(opcode: int, addr: int) -> bytes:
     return be32(opword)
 
 
-def make_branch_04(hook_addr: int, bin_addr: int, link: bool = False) -> bytes:
+def make_branch_04(hook_addr: int, dest: int) -> bytes:
     """Makes an 04 gecko code for a branch"""
 
     opword = gecko_opword(0x04, hook_addr)
 
-    delta = bin_addr - hook_addr
+    delta = dest - hook_addr
     branch = 0x4800_0000 | (delta & 0x03FF_FFFC)
-    if link:
-        branch |= 1
     val = be32(branch)
 
     return opword + val
@@ -63,21 +98,16 @@ if __name__ == "__main__":
     hex_int = lambda x: int(x, 16)
     parser = ArgumentParser()
     parser.add_argument("payload_path", type=str)
-    parser.add_argument("payload_dest", type=hex_int)
-    parser.add_argument("payload_entry", type=hex_int)
-    parser.add_argument("payload_hook", type=hex_int)
     parser.add_argument("out_path", type=str)
-    parser.add_argument("--link", action="store_true")
     args = parser.parse_args()
 
     # Get data
-    with open(args.payload_path, "rb") as f:
-        data = f.read()
+    payload = Payload(args.payload_path)
 
     # Make code
     code = (
-        make_branch_04(args.payload_hook, args.payload_entry, args.link) +
-        make_bin_06(args.payload_dest, data)
+        make_branch_04(payload.hook_addr, payload.entrypoint) +
+        make_bin_06(payload.load_addr, payload.data)
     )
 
     # Convert to text

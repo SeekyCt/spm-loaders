@@ -26,26 +26,80 @@ The components are split into 2 categories:
 - Payload (end goal code to run)
     - relloader
 - Implementations (loaders & executors of generic payloads)
-    - saveloader + makewiimario
-    - makegecko
-    - dol (TODO)
-    - riivo (TODO)
+    - Save Exploit
+    - Gecko Code
+    - Dol Patch (TODO)
+    - Riivolution XML (TODO)
 
-### relloader
+## Payload Header
+
+| Offset  | Type    | Name                   |
+|---------|---------|------------------------|
+| 0x00    | char[4] | Header Magic           |
+| 0x04    | u32     | Header Version         |
+| 0x08    | char[4] | Payload Magic          |
+| 0x0C    | u32     | Payload Version        |
+| 0x10    | void *  | Context                |
+| 0x14    | void *  | Load Address           |
+| 0x18    | void *  | Entrypoint             |
+| 0x1C    | void *  | Hook Address           |
+| 0x20    | u32     | Implementation Type    |
+| 0x24    | u32     | Implementation Version |
+
+- The following files assume this format:
+    - `include/payload.h`
+    - `include/payloadoffs.inc`
+    - `relloader3/entry.s`
+    - `tools/makegecko.py`
+- **Header Magic**: ASCII value 'SPMP' (Super Paper Mario Payload)
+- **Header Version**: the format of this struct, currently 1
+    - These existing fields can be assumed to keep their position in all future versions
+- **Payload Magic**: ASCII identifier of the payload itself
+    - See table below for known values
+- **Payload Version**: the version of the payload itself
+- **Context**: space for the payload to give information to other code 
+- **Load Address**: address to load the payload at
+- **Entrypoint**: address to start execution of the payload at
+    - Add 1 to this address to use a bl for the hook instead of a b
+- **Hook Address**: address to branch to the entrypoint from
+- **Implementation Type**: identifier of the implementation that loaded this payload
+    - See table below for known values
+    - More types may be added in the future
+    - This is just provided for debugging
+        - Error messages in mods should include this
+        - No assumptions should be made based on this value
+- **Implementation Version**: the version of the implementation that loaded this payload
+    - This is just provided for debugging
+        - Error messages in mods should include this
+        - No assumptions should be made based on this value
+
+| Payload Magic | Payload Type |
+|---------------|--------------|
+| RLd3          | relloader3   |
+
+| Implementation Type | Name                       |
+|---------------------|----------------------------|
+| 0                   | Official Gecko Code        |
+| 1                   | Official Dol Patch         |
+| 2                   | Official Riivolution Patch |
+| 3                   | Official Save exploit      |
+
+## relloader3 Payload
 
 relloader is the main rel loader payload, shared between all implementations.
 
 - This expects to be loaded at 80004200
     - For compatibility with saveloader, this limits the size to 0x800 bytes
-- Entrypoint is 80004220
 - This loads the file "./mod/rgX.rel" from disc if it exists, and falls back to "rgX.rel" in the save file if it doesn't
     - Where `rg` is `eu`, `us`, `jp` or `kr` for the region of the game, and `X` is 0-2 for the revision of the game
-- The loader code itself doesn't assume a specific hook location, though it must be after memInit and dvdmgrInit
 - The following defines should be given when building:
-    - REL_LOADER_VERSION: version of the relloader payload itself
     - IMPLEMENTATION_TYPE: type of implementation this is being built for use in
     - IMPLEMENTATION_VERSION: version of implementation this is being built for use in
 - The rel is placed on the unused MEM1 heap (id 2) if there's space, or the main MEM1 heap (id 1) otherwise
+
+## Save Exploit Implementation
+
+Creates a save file that will load a payload when the items menu is opened.
 
 ### saveloader
 
@@ -54,21 +108,14 @@ payload (ex. relloader) at a specified address, and inserts a branch to it at a 
 It will preserve itself on future game reboots and re-apply the payload hook.
 
 - This is written as position independent assembly code
-- No assumption is made about the position of this loader in the save file
+    - No assumption is made about the position of this loader in the save file
 - The following defines should be given when building:
     - PAYLOAD_PATH: path to the main payload to load
-    - PAYLOAD_DEST: address to copy the main payload to
-    - PAYLOAD_ENTRY: address to start execution in the main payload at
-    - PAYLOAD_HOOK: address to branch to the payload entry from
 - It's assumed that the OS save region is free to be used
 - During the initial reboot, the loader requires space at 0x81000000 to relocate itself to
     - This should just be free arena space
 - After the initial reboot, the loader requires space at 0x80005000 to relocate itself to
-    - This limits the total loader size (including its payload) to 0x10bc bytes
-
-### tools/makegecko.py
-
-Creates a payload implementation gecko code. No assumptions are made about this payload.
+    - This limits the total saveloader size (including its payload) to 0x10bc bytes
 
 ### tools/makewiimario.py
 
@@ -84,3 +131,15 @@ Creates a save file with a loader (ex. saveloader) + the exploit to load it.
         - lsw
         - coinEntries
 - Assumes the loader is expecting to be loaded at & executed from the start of lswf
+
+## Gecko Code Implementation
+
+Creates a gecko code that will load a payload on boot, done by `tools/makegecko.py`.
+
+## Riivolution Implementation
+
+Creates a riivolution XML snippet that will load a payload on boot.
+
+## Dol Patch Implementation
+
+Patches a dol file to load a payload on boot.
