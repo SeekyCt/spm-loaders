@@ -94,6 +94,7 @@ class SpmarioGlobals:
         "kr0": 0,
     }
 
+    @staticmethod
     def make_default(name: str, map: str) -> bytes:
         spmg = bytearray(SpmarioGlobals.SIZE)
 
@@ -134,6 +135,7 @@ class MarioPouchWork:
         "kr0": 0,
     }
 
+    @staticmethod
     def make_default() -> bytes:
         pouch = bytearray(MarioPouchWork.SIZE)
 
@@ -157,6 +159,7 @@ class SaveFile:
 
     OFFS_POUCH = 0x1b10
 
+    @staticmethod
     def build(spmg: bytes, pouch: bytes) -> bytes:
         assert len(spmg) == 0x1b08 == SpmarioGlobals.SIZE
         assert len(pouch) == 0x6a0 == MarioPouchWork.SIZE
