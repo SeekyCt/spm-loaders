@@ -112,7 +112,6 @@ ASFLAGS = ' '.join([
 LDFLAGS = ' '.join([
     "$machdep",
 
-    "-e entry", # Set entry to _prolog
     "-g", # Output debug info
     ','.join([
         "-Wl", # Pass the following options to the linker
@@ -208,9 +207,10 @@ def emit_rules(n: Writer):
     # .o & .ld -> .elf linking
     # Variables to pass in:
     #     map: map file output path
+    #     flags: extra linker flags
     n.rule(
         "ld",
-        command = "$cc $ldflags $ldscripts $in -o $out -Wl,-Map,$map",
+        command = "$cc $ldflags $flags $ldscripts $in -o $out -Wl,-Map,$map",
         description = "LD $out"
     )
     n.newline()
@@ -383,8 +383,15 @@ class BuiltFile(File):
             variables = self.variables,
         )
 
-def build_elf(dest: str, map_dest: str, sources: List["CompilableSourceFile"], builddir: str,
-              ldscripts: Optional[List[File]] = None, extra_deps: Optional[List[File]] = None):
+def build_elf(
+    dest: str,
+    map_dest: str,
+    sources: List["CompilableSourceFile"],
+    builddir: str,
+    ldflags: str = "",
+    ldscripts: Optional[List[File]] = None,
+    extra_deps: Optional[List[File]] = None
+):
     """Builds an ELF file from a list of sources"""
 
     # Get object files for all sources
@@ -397,6 +404,7 @@ def build_elf(dest: str, map_dest: str, sources: List["CompilableSourceFile"], b
         ofiles,
         {
             "map" : map_dest,
+            "flags" : ldflags,
             "ldscripts" : ' '.join([f"-T{ld.path}" for ld in ldscripts or []])
         },
         (extra_deps or []) + (ldscripts or [])
@@ -477,6 +485,10 @@ class RelLoader3(Payload):
     }
 
     SRCDIR = "relloader3"
+    LDFLAGS = ' '.join([
+        "-e loaderMain",
+        "-u header",
+    ])
 
     def get_built(self, dest: str, builddir: str, game_ver: GameVersion,
                    impl_type: "ImplementationType", impl_version: int) -> BuiltFile:
@@ -499,7 +511,7 @@ class RelLoader3(Payload):
         # Make ELF
         elf_path = os.path.join(builddir, "relloader3.elf")
         map_path = elf_path + ".map"
-        elf = build_elf(elf_path, map_path, sources, builddir, ldscripts)
+        elf = build_elf(elf_path, map_path, sources, builddir, self.LDFLAGS, ldscripts)
 
         # Make bin
         return BuiltFile(
@@ -573,7 +585,10 @@ class ImplSave(Implementation):
     type = ImplementationType.SAVE_EXPLOIT
 
     SRCDIR = "saveloader"
-    
+    LDFLAGS = ' '.join([
+        "-e entry",
+    ])
+
     def _get_saveloader(self, dest: str, builddir: str, payload: Payload, game_ver: GameVersion) -> BuiltFile:
         # Make payload
         payload_path = os.path.join(builddir, "payload.bin")
@@ -600,6 +615,7 @@ class ImplSave(Implementation):
             map_path,
             [source],
             builddir,
+            self.LDFLAGS,
             [game_ver.ldscript],
             [payload_built]
         )

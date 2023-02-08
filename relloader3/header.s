@@ -33,14 +33,3 @@ header:
 #include "payloadheader.inc"
 
 .size header, . - header
-
-/*
-    Entrypoint
-    TODO: unused but kept for linker, kill
-*/
-
-.global entry
-.type entry, @function
-entry:
-    b loaderMain
-.size entry, . - entry
