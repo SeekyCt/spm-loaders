@@ -10,8 +10,8 @@
 #include <msl/stdio.h>
 #include <msl/string.h>
 
-#include "payload.h"
-#include "relloader.h"
+#include "spm_loaders/payload.h"
+#include "spm_loaders/relloader.h"
 
 namespace relloader3 {
 

@@ -7,7 +7,7 @@
     PistonMiner, and Zephiles' original SPM port, slightly edited by Seeky
 */
 
-#include "payloadoffs.inc"
+#include "spm_loaders/payloadoffs.inc"
 
 .section .text
 .global entry

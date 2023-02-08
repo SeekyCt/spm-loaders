@@ -30,6 +30,6 @@ header:
 #define ENTRYPOINT loaderMain
 #define HOOK_ADDRESS (spmarioInit + 0x6f8)
 
-#include "payloadheader.inc"
+#include "spm_loaders/payloadheader.inc"
 
 .size header, . - header
