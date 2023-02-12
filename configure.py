@@ -3,7 +3,6 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
-from enum import IntEnum
 from io import StringIO
 from itertools import chain
 import os
@@ -314,7 +313,7 @@ class SourceFile(File):
     def _build(self, n: Writer):
         """Dummy - this file will always exist"""
 
-        print("Exists - ", self.path)
+        pass
 
 @dataclass
 class CompilableSourceFile(SourceFile):
@@ -368,8 +367,6 @@ class BuiltFile(File):
     extra_deps: Optional[List[File]] = None
 
     def _build(self, n: Writer):
-        print("Build - ", self.path, [s.path for s in self.sources])
-
         # Build dependencies
         for source in chain(self.sources, self.extra_deps or []):
             source.build(n)
@@ -383,10 +380,14 @@ class BuiltFile(File):
             variables = self.variables,
         )
 
+    def make_default(self, n: Writer):
+        self.build(n)
+        n.default(self.path)
+
 def build_elf(
     dest: str,
     map_dest: str,
-    sources: List["CompilableSourceFile"],
+    sources: List[CompilableSourceFile],
     builddir: str,
     ldflags: str = "",
     ldscripts: Optional[List[File]] = None,
@@ -408,6 +409,15 @@ def build_elf(
             "ldscripts" : ' '.join([f"-T{ld.path}" for ld in ldscripts or []])
         },
         (extra_deps or []) + (ldscripts or [])
+    )
+
+def build_phony(name: str, files: List[BuiltFile]) -> BuiltFile:
+    """Adds a phony build rule for some files"""
+
+    return BuiltFile(
+        name,
+        "phony",
+        [f for f in files]
     )
 
 #####################
@@ -449,173 +459,117 @@ class GameVersion:
             [self.lst]
         )
 
-class Payload(ABC):
-    """A payload's properties"""
+def build_relloader3(dest: str, builddir: str, game_ver: GameVersion) -> BuiltFile:
+    """Builds the relloader3 payload"""
 
-    @abstractmethod
-    def get_built(self, dest: str, builddir: str, game_ver: GameVersion) -> BuiltFile:
-        """Get the BuiltFile for an implementation"""
+    # Setup source files
+    sources, other = SourceFile.collect_files(
+        "relloader3",
+        {
+            "flags" : ' '.join([
+                f"-D{game_ver.define}",
+            ])
+        }
+    )
+    ldscripts = other.pop(".ld") if ".ld" in other else []
+    assert len(other) == 0, f"Unsupported files in srcdir {[x for x in other.values()]}"
 
-        raise NotImplementedError
+    ldscripts.append(game_ver.ldscript)
 
-class RelLoader3(Payload):
-    """Rel Loader payload"""
+    # Make ELF
+    elf_path = os.path.join(builddir, "relloader3.elf")
+    map_path = elf_path + ".map"
+    elf = build_elf(
+        elf_path,
+        map_path,
+        sources,
+        builddir,
+        ' '.join([
+            "-e loaderMain",
+            "-u header",
+        ]),
+        ldscripts
+    )
 
-    SRCDIR = "relloader3"
-    LDFLAGS = ' '.join([
-        "-e loaderMain",
-        "-u header",
-    ])
+    # Make bin
+    return BuiltFile(
+        dest,
+        "objcopy",
+        [elf]
+    )
 
-    def get_built(self, dest: str, builddir: str, game_ver: GameVersion) -> BuiltFile:
-        # Setup source files
-        sources, other = SourceFile.collect_files(
-            self.SRCDIR,
-            {
-                "flags" : ' '.join([
-                    f"-D{game_ver.define}",
-                ])
-            }
-        )
-        ldscripts = other.pop(".ld") if ".ld" in other else []
-        assert len(other) == 0, f"Unsupported files in {self.SRCDIR} {other}"
+def build_impl_gecko(dest: str, payload: BuiltFile) -> BuiltFile:
+    """Builds the gecko code implementation of a payload"""
 
-        ldscripts.append(game_ver.ldscript)
+    return BuiltFile(
+        dest,
+        "makegecko",
+        [payload]
+    )
 
-        # Make ELF
-        elf_path = os.path.join(builddir, "relloader3.elf")
-        map_path = elf_path + ".map"
-        elf = build_elf(elf_path, map_path, sources, builddir, self.LDFLAGS, ldscripts)
-
-        # Make bin
-        return BuiltFile(
-            dest,
-            "objcopy",
-            [elf]
-        )
-
-class ImplementationType(IntEnum):
-    GECKO_CODE = 0
-    DOL_PATCH = 1
-    RIIVOLUTION = 2
-    SAVE_EXPLOIT = 3
-
-class Implementation(ABC):
-    """An implementation's properties"""
-
-    file: BuiltFile
-
-    # Set by subclass
-    type: ImplementationType
-    version: int
-
-    def __init__(self, dest: str, builddir: str, payload: Payload, game_ver: GameVersion):
-        self.file = self._get_built(dest, builddir, payload, game_ver)
-    
-    @abstractmethod
-    def _get_built(self, dest: str, builddir: str, payload: Payload, game_ver: GameVersion) -> BuiltFile:
-        """Get the BuiltFile for this implementation"""
-
-        raise NotImplementedError
-
-class ImplGecko(Implementation):
-    """Gecko Code loader implementation"""
-
-    type = ImplementationType.GECKO_CODE
-    version = 1
-
-    def _get_built(self, dest: str, builddir: str, payload: Payload, game_ver: GameVersion) -> BuiltFile:
-        """Get the BuiltFile for this implementation"""
-
-        # Make payload
-        payload_path = os.path.join(builddir, "payload.bin")
-        payload_built = payload.get_built(payload_path, builddir, game_ver)
-
-        return BuiltFile(
-            dest,
-            "makegecko",
-            [payload_built]
-        )
-
-class ImplRiivo(Implementation):
-    """Riivolution loader implementation"""
-
-    version = 1
-    type = ImplementationType.RIIVOLUTION
-
-    def _get_built(self, dest: str, builddir: str, payload: Payload, game_ver: GameVersion) -> BuiltFile:
-        payload_built = payload.get_built(dest, builddir, game_ver)
-
-        return payload_built
+def build_impl_riivo(dest: str, payload: BuiltFile) -> BuiltFile:
+    """Builds the riivolution implementation of a payload"""
 
     # TODO
+    return payload
 
-class ImplSave(Implementation):
-    """Specific details of the save exploit implementation
-    
-    Detailed in README.md"""
+def build_saveloader(dest: str, builddir: str, payload: BuiltFile, game_ver: GameVersion
+                    ) -> BuiltFile:
+    """Builds the saveloader makewiimario "payload" (TODO: rename?) """
 
-    version = 1
-    type = ImplementationType.SAVE_EXPLOIT
+    # Setup source files
+    as_safe_path = payload.path.replace('\\', '/')
+    source = CompilableSourceFile(
+        os.path.join("saveloader", "saveloader.s"),
+        {
+            "flags" : ' '.join([
+                f"-D{game_ver.define}",
+                f"-DPAYLOAD_PATH=\"{as_safe_path}\""
+            ])
+        },
+        [payload]
+    )
 
-    SRCDIR = "saveloader"
-    LDFLAGS = ' '.join([
-        "-e entry",
-    ])
+    # Make ELF
+    elf_path = os.path.join(builddir, "saveloader.elf")
+    map_path = elf_path + ".map"
+    elf = build_elf(
+        elf_path,
+        map_path,
+        [source],
+        builddir,
+        ' '.join([
+                "-e entry",
+        ]),
+        [game_ver.ldscript],
+        [payload]
+    )
 
-    def _get_saveloader(self, dest: str, builddir: str, payload: Payload, game_ver: GameVersion) -> BuiltFile:
-        # Make payload
-        payload_path = os.path.join(builddir, "payload.bin")
-        payload_built = payload.get_built(payload_path, builddir, game_ver)
+    # Make bin
+    return BuiltFile(
+        dest,
+        "objcopy",
+        [elf]
+    )
 
-        # Setup source files
-        as_safe_path = payload_built.path.replace('\\', '/')
-        source = CompilableSourceFile(
-            os.path.join(self.SRCDIR, "saveloader.s"),
-            {
-                "flags" : ' '.join([
-                    f"-D{game_ver.define}",
-                    f"-DPAYLOAD_PATH=\"{as_safe_path}\""
-                ])
-            },
-            [payload_built]
-        )
+def build_impl_save(dest: str, builddir: str, payload: BuiltFile, game_ver: GameVersion
+                   ) -> BuiltFile:
+    """Builds the save exploit implementation of a payload"""
 
-        # Make ELF
-        elf_path = os.path.join(builddir, "saveloader.elf")
-        map_path = elf_path + ".map"
-        elf = build_elf(
-            elf_path,
-            map_path,
-            [source],
-            builddir,
-            self.LDFLAGS,
-            [game_ver.ldscript],
-            [payload_built]
-        )
+    # Make saveloader
+    saveloader_path = os.path.join(builddir, "saveloader.bin")
+    saveloader = build_saveloader(saveloader_path, builddir, payload, game_ver)
 
-        # Make bin
-        return BuiltFile(
-            dest,
-            "objcopy",
-            [elf]
-        )
-
-    def _get_built(self, dest: str, builddir: str, payload: Payload, game_ver: GameVersion) -> BuiltFile:
-        # Make saveloader
-        saveloader_path = os.path.join(builddir, "saveloader.bin")
-        saveloader = self._get_saveloader(saveloader_path, builddir, payload, game_ver)
-
-        # Make save file
-        return BuiltFile(
-            dest,
-            "makewiimario",
-            [saveloader],
-            {
-                "savename" : f"Rel Loader 3 {game_ver.name} v{self.version}",
-                "game_ver" : game_ver.name
-            }
-        )
+    # Make save file
+    return BuiltFile(
+        dest,
+        "makewiimario",
+        [saveloader],
+        {
+            "savename" : f"Rel Loader 3 {game_ver.name}",
+            "game_ver" : game_ver.name
+        }
+    )
 
 def main(game_versions: List[GameVersion]):
     outbuf = StringIO()
@@ -628,43 +582,41 @@ def main(game_versions: List[GameVersion]):
 
     for game_ver in game_versions:
         builddir = os.path.join("$builddir", game_ver.name)
-        relloader = RelLoader3()
-        impl_save = ImplSave(
+
+        # Build rel loader
+        relloader = build_relloader3(
+            os.path.join("$outdir", f"relloader_{game_ver.name}.bin"),
+            os.path.join(builddir, "relloader3"),
+            game_ver
+        )
+
+        # Build implementations
+        impl_save = build_impl_save(
             os.path.join("$outdir", f"wiimario_{game_ver.name}"),
             os.path.join(builddir, "save"),
             relloader,
             game_ver
         )
-        impl_save.file.build(n)
-        n.default(impl_save.file.path)
-
-        impl_gecko = ImplGecko(
+        impl_gecko = build_impl_gecko(
             os.path.join("$outdir", f"gecko_{game_ver.name}.txt"),
-            os.path.join(builddir, "gecko"),
             relloader,
-            game_ver
         )
-        impl_gecko.file.build(n)
-        n.default(impl_gecko.file.path)
-
-        impl_riivo = ImplRiivo(
-            os.path.join("$outdir", f"relloader3_{game_ver.name}.bin"),
-            os.path.join(builddir, "riivo"),
+        impl_riivo = build_impl_riivo(
+            os.path.join("$outdir", f"riivolution_{game_ver.name}.bin"),
             relloader,
-            game_ver
         )
-        impl_riivo.file.build(n)
-        n.default(impl_riivo.file.path)
 
-        n.build(
+        # Make alias
+        phony = build_phony(
             game_ver.name,
-            rule="phony",
-            inputs=[
-                impl_gecko.file.path,
-                impl_save.file.path,
-                impl_riivo.file.path
+            [
+                relloader,
+                impl_gecko,
+                impl_save,
+                impl_riivo
             ]
         )
+        phony.make_default(n)
 
     # Write to file
     with open("build.ninja", 'w') as f:
