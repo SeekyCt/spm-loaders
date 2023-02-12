@@ -85,7 +85,8 @@ CFLAGS = ' '.join([
     "-Wextra", # Enable even more warnings
     "-Wpedantic", # Enable even more warnings than that
     "-Wshadow", # Enable variable shadowing warning
-    "-Werror" # Error on warnings
+    "-Werror", # Error on warnings
+    "-fmax-errors=1", # Stop after 1 error
 ])
 
 # C++ flags
