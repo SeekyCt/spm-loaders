@@ -9,6 +9,10 @@
 
 #include "spm_loaders/payloadoffs.inc"
 
+// Values for payload header
+.set IMPLEMENTATION_TYPE, 3
+.set IMPLEMENTATION_VERSION, 1
+
 .section .text
 .global entry
 .type entry, @function
@@ -194,6 +198,13 @@ blrl
 lwz r3, (payload - stage4_pic)+OFFS_PAYLOAD_LOAD_ADDRESS (r30)
 li r4, PAYLOAD_SIZE
 bl flushCache
+
+// Set implementation type in payload header
+lwz r3, (payload - stage4_pic)+OFFS_PAYLOAD_LOAD_ADDRESS (r30)
+li r4, IMPLEMENTATION_TYPE
+stw r4, OFFS_PAYLOAD_IMPLEMENTATION_TYPE (r3)
+li r4, IMPLEMENTATION_VERSION
+stw r4, OFFS_PAYLOAD_IMPLEMENTATION_VERSION (r3)
 
 // Write payload hook
 // writeBranch(payload.hook_addr, payload.entrypoint)

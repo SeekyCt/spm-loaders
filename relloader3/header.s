@@ -5,17 +5,6 @@
 .section .first, "ax"
 
 /*
-    Command line define arguments
-*/
-
-#ifndef IMPLEMENTATION_TYPE
-    .err
-#endif
-#ifndef IMPLEMENTATION_VERSION
-    .err
-#endif
-
-/*
     Payload header struct - 0x80004200
 */
 

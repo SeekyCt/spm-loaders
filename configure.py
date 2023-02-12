@@ -452,37 +452,14 @@ class GameVersion:
 class Payload(ABC):
     """A payload's properties"""
 
-    # Set by subclass
-    base_addr: int
-    entry_addr: int
-    hook_addrs: Dict[str, int]
-
     @abstractmethod
-    def get_built(self, dest: str, builddir: str, game_ver: GameVersion,
-                  impl_type: "ImplementationType", impl_version: int) -> BuiltFile:
+    def get_built(self, dest: str, builddir: str, game_ver: GameVersion) -> BuiltFile:
         """Get the BuiltFile for an implementation"""
 
         raise NotImplementedError
-    
-    def get_hook_addr(self, game_ver: GameVersion) -> int:
-        return self.hook_addrs[game_ver.name]
 
 class RelLoader3(Payload):
     """Rel Loader payload"""
-
-    base_addr = 0x8000_4200
-    entry_addr = base_addr + 0x20
-    hook_addrs = {
-        "eu0" : 0x801a84d4,
-        "eu1" : 0x801a84d4,
-        "us0" : 0x801a7734,
-        # TODO
-        "us1" : 0,
-        "us2" : 0,
-        "jp0" : 0,
-        "jp1" : 0,
-        "kr0" : 0,
-    }
 
     SRCDIR = "relloader3"
     LDFLAGS = ' '.join([
@@ -490,16 +467,13 @@ class RelLoader3(Payload):
         "-u header",
     ])
 
-    def get_built(self, dest: str, builddir: str, game_ver: GameVersion,
-                   impl_type: "ImplementationType", impl_version: int) -> BuiltFile:
+    def get_built(self, dest: str, builddir: str, game_ver: GameVersion) -> BuiltFile:
         # Setup source files
         sources, other = SourceFile.collect_files(
             self.SRCDIR,
             {
                 "flags" : ' '.join([
                     f"-D{game_ver.define}",
-                    f"-DIMPLEMENTATION_TYPE={impl_type}",
-                    f"-DIMPLEMENTATION_VERSION={impl_version}"
                 ])
             }
         )
@@ -555,7 +529,7 @@ class ImplGecko(Implementation):
 
         # Make payload
         payload_path = os.path.join(builddir, "payload.bin")
-        payload_built = payload.get_built(payload_path, builddir, game_ver, self.type, self.version)
+        payload_built = payload.get_built(payload_path, builddir, game_ver)
 
         return BuiltFile(
             dest,
@@ -570,7 +544,7 @@ class ImplRiivo(Implementation):
     type = ImplementationType.RIIVOLUTION
 
     def _get_built(self, dest: str, builddir: str, payload: Payload, game_ver: GameVersion) -> BuiltFile:
-        payload_built = payload.get_built(dest, builddir, game_ver, self.type, self.version)
+        payload_built = payload.get_built(dest, builddir, game_ver)
 
         return payload_built
 
@@ -592,7 +566,7 @@ class ImplSave(Implementation):
     def _get_saveloader(self, dest: str, builddir: str, payload: Payload, game_ver: GameVersion) -> BuiltFile:
         # Make payload
         payload_path = os.path.join(builddir, "payload.bin")
-        payload_built = payload.get_built(payload_path, builddir, game_ver, self.type, self.version)
+        payload_built = payload.get_built(payload_path, builddir, game_ver)
 
         # Setup source files
         as_safe_path = payload_built.path.replace('\\', '/')

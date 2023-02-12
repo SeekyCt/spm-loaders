@@ -6,6 +6,10 @@ from argparse import ArgumentParser
 import struct
 
 
+IMPLEMENTATION_TYPE = 0
+IMPLEMENTATION_VERSION = 1
+
+
 class Payload:
     data: bytes
 
@@ -20,18 +24,24 @@ class Payload:
 
     HEADER_SIZE = 0x28
 
-    def __init__(self, path: str):
+    def __init__(self, path: str, impl_type: int, impl_ver: int):
+        # Load raw data
         with open(path, 'rb') as f:
-            self.data = f.read()
+            data = bytearray(f.read())
 
+        # Patch implementation type
+        struct.pack_into(">II", data, 0x20, impl_type, impl_ver)
+
+        # Parse header
         (
             header_magic, header_ver, payload_magic, payload_ver, context, load_addr, entrypoint,
             hook_addr, impl_type, impl_ver
-        ) = struct.unpack(">4sI4sIIIIIII", self.data[:self.HEADER_SIZE])
+        ) = struct.unpack(">4sI4sIIIIIII", data[:self.HEADER_SIZE])
 
         assert header_magic == b"SPMP"
         assert header_ver == 1
 
+        self.data = bytes(data)
         self.payload_magic = payload_magic
         self.payload_ver = payload_ver
         self.context = context
@@ -102,7 +112,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Get data
-    payload = Payload(args.payload_path)
+    payload = Payload(args.payload_path, IMPLEMENTATION_TYPE, IMPLEMENTATION_VERSION)
 
     # Make code
     code = (

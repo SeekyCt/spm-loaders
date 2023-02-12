@@ -33,7 +33,7 @@
 .4byte HOOK_ADDRESS
 
 // 0x20 Implementation type
-.4byte IMPLEMENTATION_TYPE
+.4byte -1
 
 // 0x24 Implementation version
-.4byte IMPLEMENTATION_VERSION
+.4byte -1

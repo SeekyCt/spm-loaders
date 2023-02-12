@@ -63,12 +63,14 @@ The components are split into 2 categories:
     - Add 1 to this address to use a bl for the hook instead of a b
 - **Hook Address**: address to branch to the entrypoint from
 - **Implementation Type**: identifier of the implementation that loaded this payload
+    - Should be left as -1 in the payload itself, and written to by implementations
     - See table below for known values
     - More types may be added in the future
     - This is just provided for debugging
         - Error messages in mods should include this
         - No assumptions should be made based on this value
 - **Implementation Version**: the version of the implementation that loaded this payload
+    - Should be left as -1 in the payload itself, and written to by implementations
     - This is just provided for debugging
         - Error messages in mods should include this
         - No assumptions should be made based on this value
@@ -92,9 +94,6 @@ relloader is the main rel loader payload, shared between all implementations.
     - For compatibility with saveloader, this limits the size to 0x800 bytes
 - This loads the file "./mod/rgX.rel" from disc if it exists, and falls back to "rgX.rel" in the save file if it doesn't
     - Where `rg` is `eu`, `us`, `jp` or `kr` for the region of the game, and `X` is 0-2 for the revision of the game
-- The following defines should be given when building:
-    - IMPLEMENTATION_TYPE: type of implementation this is being built for use in
-    - IMPLEMENTATION_VERSION: version of implementation this is being built for use in
 - The rel is placed on the unused MEM1 heap (id 2) if there's space, or the main MEM1 heap (id 0) otherwise
 
 ## Save Exploit Implementation
