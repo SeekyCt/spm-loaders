@@ -95,7 +95,7 @@ relloader is the main rel loader payload, shared between all implementations.
 - The following defines should be given when building:
     - IMPLEMENTATION_TYPE: type of implementation this is being built for use in
     - IMPLEMENTATION_VERSION: version of implementation this is being built for use in
-- The rel is placed on the unused MEM1 heap (id 2) if there's space, or the main MEM1 heap (id 1) otherwise
+- The rel is placed on the unused MEM1 heap (id 2) if there's space, or the main MEM1 heap (id 0) otherwise
 
 ## Save Exploit Implementation
 
