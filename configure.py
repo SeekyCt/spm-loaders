@@ -306,7 +306,7 @@ class SourceFile(File):
                 # Add file based on extension
                 if CompilableSourceFile.is_compilable(ext):
                     sources.append(CompilableSourceFile(path, variables))
-                else:
+                elif ext not in cls.IGNORE_EXTENSIONS:
                     other[ext].append(SourceFile(path))
 
         return sources, other
