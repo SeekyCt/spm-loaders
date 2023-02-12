@@ -10,8 +10,9 @@
 #include <msl/stdio.h>
 #include <msl/string.h>
 
-#include "spm_loaders/payload.h"
-#include "spm_loaders/relloader.h"
+#include <spm_loaders/relloader.h>
+
+#include "error.h"
 
 namespace relloader3 {
 
@@ -22,51 +23,6 @@ extern "C" {
 RelLoaderContext loaderCtx;
 
 }
-
-static const wii::gx::GXColor fg = {0xff, 0xff, 0xff, 0xff};
-static const wii::gx::GXColor bg = {0x00, 0x00, 0x00, 0xff};
-
-/*
-    Displays an error message on scree for a failed assertion
-*/
-static void NORETURN errorPanic(const char * file, s32 line, const char * function, s32 code,
-                                const char * context)
-{
-    char message[128];
-    msl::stdio::sprintf(
-        message,
-        "[%d|%d|%d] %s line %d (%s):\nfailed %s with %d",
-        payloadHeader->implementationType,
-        payloadHeader->implementationVersion,
-        payloadHeader->payloadVersion,
-        file,
-        line,
-        function,
-        context,
-        code
-    );
-    wii::os::OSFatal(&fg, &bg, message);
-}
-
-/*
-    Calls errorPanic with automatic filename, line and function
-*/
-#define ERROR(code, context) errorPanic(__FILE__, __LINE__, __FUNCTION__, code, context)
-
-/*
-    Calls errorPanic if an error code is negative
-*/
-#define CHECK_ERROR(code, ctx) if (code < 0) ERROR(code, ctx)
-
-/*
-    Calls errorPanic if a condition isn't met
-*/
-#define CHECK_TRUE(condition, context) if (!condition) ERROR(0, context)
-
-/*
-    Calls errorPanic if a pointer is null
-*/
-#define CHECK_PTR(ptr, size, context) if (ptr == nullptr) ERROR(size, context)
 
 /*
     Rel filename based on region and revision
@@ -192,7 +148,7 @@ void loaderMain()
     if (rel == nullptr)
         rel = tryNandLoad();
     if (rel == nullptr)
-        wii::os::OSFatal(&fg, &bg, "Error: rel not found on disc or in save file");
+        error("Error: rel not found on disc or in save file");
 
     // Allocate bss
     void * bss = alloc(rel->bssSize, rel->bssAlign);
