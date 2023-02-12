@@ -7,12 +7,16 @@ from typing import List, Tuple
 
 @dataclass
 class DolSymbol:
+    """Container for a symbol in a dol file"""
+
     addr: int
     name: str
 
 
 @dataclass
 class RelSymbol:
+    """Container for a symbol in a rel file"""
+
     module_id: int
     section_id: int
     offset: int
@@ -20,6 +24,8 @@ class RelSymbol:
 
 
 def load_lst(filename: str) -> Tuple[List[DolSymbol], List[RelSymbol]]:
+    """Parses an LST symbol map"""
+
     # Load LST
     with open(filename) as f:
         lines = f.readlines()
@@ -66,6 +72,8 @@ def load_lst(filename: str) -> Tuple[List[DolSymbol], List[RelSymbol]]:
 
 
 def make_ld(symbols: List[DolSymbol]) -> str:
+    """Makes a GNU LD linker script defining a list of symbols"""
+
     return '\n'.join([
         f"PROVIDE({sym.name} = 0x{sym.addr:x});"
         for sym in symbols
@@ -73,12 +81,19 @@ def make_ld(symbols: List[DolSymbol]) -> str:
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser()
-    parser.add_argument("lst_path")
-    parser.add_argument("ld_path")
+    parser = ArgumentParser(
+        description="Creates a GNU LD linker script from an LST symbol map"
+    )
+    parser.add_argument("lst_path", help="Path to the LST symbol map")
+    parser.add_argument("ld_path", help="Output linker script path")
     args = parser.parse_args()
 
+    # Read symbol map
     dol_symbols, _ = load_lst(args.lst_path)
+
+    # Convert to linker script
     txt = make_ld(dol_symbols)
+
+    # Output
     with open(args.ld_path, 'w') as f:
         f.write(txt)
