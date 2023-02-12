@@ -1,26 +1,7 @@
 # spm-loaders
 
-Loader source code for the following rel loader implementations:
-- Gecko code
-- Save exploit
-- Riivolution (TODO)
-- Dol patch (TODO)
-
 This repo contains some generalised loader components, and a specific standard design built off of those.
 See [Components](#components) for details of the components, and [STANDARD.MD] for the more specific details.
-
-## Memory Usage
-
-A certain range of RAM across all regions is reserved for this: 80004200 - 800060bb (inclusive)
-- 80004200 - 80005000 is relloader
-- 80005000 - 800060bb is space for saveloader if needed
-- This range can be patched in a dol easily
-- This is part of the TRK interrupt table, which goes unused and is in the same place in all versions
-- Technically, anything from the TRK string at 80004188 could've been used
-    - The starting address chosen is slightly nicer
-    - This still leaves some space for future standards to use, should that be needed
-
-## Components
 
 The components are split into 2 categories:
 - Payload (end goal code to run)
@@ -30,6 +11,17 @@ The components are split into 2 categories:
     - Gecko Code
     - Dol Patch (TODO)
     - Riivolution XML (TODO)
+
+## Memory Usage
+
+A certain range of RAM across all regions is reserved for this: 80004200 - 800060bb (inclusive)
+- 80004200 - 80004fff is relloader
+- 80005000 - 800060bb is space for saveloader if needed
+- This range can be patched in a dol easily
+- This is part of the TRK interrupt table, which goes unused and is in the same place in all versions
+- Technically, anything from the TRK string at 80004188 could've been used
+    - The starting address chosen is slightly nicer
+    - This still leaves some space for future standards to use, should that be needed
 
 ## Payload Header
 
@@ -57,7 +49,7 @@ The components are split into 2 categories:
 - **Payload Magic**: ASCII identifier of the payload itself
     - See table below for known values
 - **Payload Version**: the version of the payload itself
-- **Context**: space for the payload to give information to other code 
+- **Context**: space for the payload to give information to other code
 - **Load Address**: address to load the payload at
 - **Entrypoint**: address to start execution of the payload at
     - Add 1 to this address to use a bl for the hook instead of a b
