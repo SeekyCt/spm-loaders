@@ -1,6 +1,7 @@
 #include <common.h>
 #include <spm/dvdmgr.h>
 #include <spm/memory.h>
+#include <spm/relmgr.h>
 #include <wii/gx.h>
 #include <wii/ipc.h>
 #include <wii/nand.h>
@@ -12,11 +13,12 @@
 
 #include <spm_loaders/relloader.h>
 
+#include "dvd.h"
 #include "error.h"
+#include "nand.h"
+#include "util.h"
 
 namespace relloader3 {
-
-#define ALIGN_TO(val, align) (((val) + ((align)-1)) & ~((align)-1))
 
 extern "C" {
 
@@ -24,8 +26,55 @@ RelLoaderContext loaderCtx;
 
 }
 
+static bool tryLoadRel(const char * diskFilename, const char * nandFilename, bool oldNandMode=false)
+{
+    // Load rel from somewhere
+    auto * rel = (wii::os::RelHeader *) tryDvdLoad(diskFilename);
+    if (rel == nullptr)
+        rel = (wii::os::RelHeader *) tryNandLoad(nandFilename, oldNandMode);
+    if (rel == nullptr)
+        return false;
+
+    // Allocate bss
+    void * bss = alloc(rel->bssSize, rel->bssAlign);
+    CHECK_PTR(bss, rel->bssSize, "bss alloc");
+
+    // Link
+    bool ret = wii::os::OSLink(rel, bss);
+    CHECK_TRUE(ret, "OSLink");
+
+    // Call prolog
+    rel->prolog();
+
+    return true;
+}
+
 /*
-    Rel filename based on region and revision
+    Old rel loader - load mod.rel after relF.rel
+*/
+#define OLD_DISK_FILENAME "mod.rel"
+#define OLD_NAND_FILENAME "pcrel.bin"
+static void doOldLoad(wii::os::RelHeader * relF)
+{
+    // Original instruction at hook
+    relF->prolog();
+
+    CHECK_TRUE(tryLoadRel(OLD_DISK_FILENAME, OLD_NAND_FILENAME, true), "old load");
+}
+bool tryOldLoad()
+{
+    // Check if either old file exists
+    if (!dvdFileExists(OLD_DISK_FILENAME) && !nandFileExists(OLD_NAND_FILENAME))
+        return false;
+    
+    // Setup to run after relF.rel prolog
+    writeBranchLink(spm::relmgr::relMain, 0x194, doOldLoad);
+
+    return true;
+}
+
+/*
+    Modern rel loader - load rgX.rel after spmarioInit
 */
 #ifdef SPM_EU0
     #define FILENAME "eu0.rel"
@@ -44,95 +93,9 @@ RelLoaderContext loaderCtx;
 #elif defined SPM_KR0
     #define FILENAME "kr0.rel"
 #endif
-
-/*
-    Allocates memory with optional alignment
-    Uses the unused MEM1 heap if there's space, falls back to the main heap otherwise
-*/
-static void * alloc(size_t size, u32 alignment = 0)
+bool tryModernLoad()
 {
-    // Enforce minimum alignment
-    alignment = alignment > 0x20 ? alignment : 0x20;
-
-    // Try unused heap first
-    auto handle = spm::memory::memory_wp->heapHandle[spm::memory::HEAP_MEM1_UNUSED];
-    void * firstAlloc = wii::mem::MEMAllocFromExpHeapEx(handle, size, alignment);
-    if (firstAlloc != nullptr)
-        return firstAlloc;
-    
-    // Fall back to main heap
-    handle = spm::memory::memory_wp->heapHandle[spm::memory::HEAP_MAIN];
-    return wii::mem::MEMAllocFromExpHeapEx(handle, size, alignment);
-}
-
-/*
-    Attempts to load the rel from the save file on the NAND
-*/
-static wii::os::RelHeader * tryNandLoad()
-{
-    char path[64];
-    s32 ret;
-
-    // Build path
-    wii::nand::NANDGetHomeDir(path);
-    msl::string::strcat(path, "/" FILENAME);
-
-    // Try open
-    s32 fd = wii::ipc::IOS_Open(path, wii::ipc::IOS_OPEN_READ);
-    if (fd == ios::fs::ERR_FS_ENOENT)
-        return nullptr;
-    CHECK_ERROR(fd, "IOS_Open");
-
-    // Get length
-    ios::fs::FsFileStats ALIGNED(IOS_ALIGN) stats;
-    ret = wii::ipc::IOS_Ioctl(fd, ios::fs::IOCTL_FS_GET_FILE_STATS, nullptr, 0, &stats, sizeof(stats));
-    CHECK_ERROR(ret, "IOS_Ioctl");
-    u32 length = ALIGN_TO(stats.length, IOS_ALIGN);
-
-    // Allocate memory
-    auto * rel = (wii::os::RelHeader *) alloc(length, IOS_ALIGN);
-    CHECK_PTR(rel, length, "rel alloc");
-
-    // Read rel
-    ret = wii::ipc::IOS_Read(fd, rel, stats.length);
-    CHECK_ERROR(ret, "IOS_Read");
-
-    // Close
-    ret = wii::ipc::IOS_Close(fd);
-    CHECK_ERROR(ret, "IOS_Close");
-
-    wii::os::OSReport("Read from NAND\n");
-    return rel;
-}
-
-/*
-    Attempts to load the rel file from the mod folder on the disc
-*/
-static wii::os::RelHeader * tryDvdLoad()
-{
-    // Build path
-    const char * path = "./mod/" FILENAME;
-
-    // Try open
-    spm::dvdmgr::DVDEntry * entry = spm::dvdmgr::DVDMgrOpen(path, 2, 0);
-    if (entry == nullptr)
-        return nullptr;
-
-    // Get length
-    u32 length = ALIGN_TO(spm::dvdmgr::DVDMgrGetLength(entry), DVD_ALIGN);
- 
-    // Allocate memory
-    auto * rel = (wii::os::RelHeader *) alloc(length, DVD_ALIGN);
-    CHECK_PTR(rel, length, "rel alloc");
-
-    // Try read
-    spm::dvdmgr::DVDMgrRead(entry, rel, length, 0);
-
-    // Close
-    spm::dvdmgr::DVDMgrClose(entry);
-
-    wii::os::OSReport("Read from DVD\n");
-    return rel;
+    return tryLoadRel(FILENAME, FILENAME);
 }
 
 /*
@@ -143,23 +106,11 @@ void loaderMain()
 {
     wii::os::OSReport("Rel Loader 3 - v1\n");
 
-    // Load rel from somewhere
-    wii::os::RelHeader * rel =  tryDvdLoad();
-    if (rel == nullptr)
-        rel = tryNandLoad();
-    if (rel == nullptr)
+    bool loaded = tryModernLoad();
+    if (!loaded)
+        loaded = tryOldLoad();
+    if (!loaded)
         error("Error: rel not found on disc or in save file");
-
-    // Allocate bss
-    void * bss = alloc(rel->bssSize, rel->bssAlign);
-    CHECK_PTR(bss, rel->bssSize, "bss alloc");
-
-    // Link
-    bool ret = wii::os::OSLink(rel, bss);
-    CHECK_TRUE(ret, "OSLink");
-
-    // Call prolog
-    rel->prolog();
 }
 
 }
