@@ -51,7 +51,7 @@ void NORETURN error(const char * message)
 
     static const wii::gx::GXColor fg = {0xff, 0xff, 0xff, 0xff};
     static const wii::gx::GXColor bg = {0x00, 0x00, 0x00, 0xff};
-    wii::os::OSFatal(&fg, &bg, message);
+    wii::os::OSFatal(&fg, &bg, fullMessage);
 }
 
 }
