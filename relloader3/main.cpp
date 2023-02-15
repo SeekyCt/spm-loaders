@@ -20,12 +20,45 @@
 
 namespace relloader3 {
 
+/*
+    Create the context instance expected by the header
+*/
 extern "C" {
 
 RelLoaderContext loaderCtx;
 
 }
 
+/*
+    Old loader filenames
+*/
+#define OLD_DISK_FILENAME "mod.rel"
+#define OLD_NAND_FILENAME "pcrel.bin"
+
+/*
+    Modern loader filenames
+*/
+#ifdef SPM_EU0
+    #define FILENAME "eu0.rel"
+#elif defined SPM_EU1
+    #define FILENAME "eu1.rel"
+#elif defined SPM_US0
+    #define FILENAME "us0.rel"
+#elif defined SPM_US1
+    #define FILENAME "us1.rel"
+#elif defined SPM_US2
+    #define FILENAME "us2.rel"
+#elif defined SPM_JP0
+    #define FILENAME "jp0.rel"
+#elif defined SPM_JP1
+    #define FILENAME "jp1.rel"
+#elif defined SPM_KR0
+    #define FILENAME "kr0.rel"
+#endif
+
+/*
+    Tries to load, link and execute a rel file, returns true if successful
+*/
 static bool tryLoadRel(const char * diskFilename, const char * nandFilename, bool oldNandMode=false)
 {
     // Load rel from somewhere
@@ -52,8 +85,6 @@ static bool tryLoadRel(const char * diskFilename, const char * nandFilename, boo
 /*
     Old rel loader - load mod.rel after relF.rel
 */
-#define OLD_DISK_FILENAME "mod.rel"
-#define OLD_NAND_FILENAME "pcrel.bin"
 static void doOldLoad(wii::os::RelHeader * relF)
 {
     // Original instruction at hook
@@ -61,7 +92,7 @@ static void doOldLoad(wii::os::RelHeader * relF)
 
     CHECK_TRUE(tryLoadRel(OLD_DISK_FILENAME, OLD_NAND_FILENAME, true), "old load");
 }
-bool tryOldLoad()
+static bool tryOldLoad()
 {
     // Check if either old file exists
     if (!dvdFileExists(OLD_DISK_FILENAME) && !nandFileExists(OLD_NAND_FILENAME))
@@ -76,30 +107,13 @@ bool tryOldLoad()
 /*
     Modern rel loader - load rgX.rel after spmarioInit
 */
-#ifdef SPM_EU0
-    #define FILENAME "eu0.rel"
-#elif defined SPM_EU1
-    #define FILENAME "eu1.rel"
-#elif defined SPM_US0
-    #define FILENAME "us0.rel"
-#elif defined SPM_US1
-    #define FILENAME "us1.rel"
-#elif defined SPM_US2
-    #define FILENAME "us2.rel"
-#elif defined SPM_JP0
-    #define FILENAME "jp0.rel"
-#elif defined SPM_JP1
-    #define FILENAME "jp1.rel"
-#elif defined SPM_KR0
-    #define FILENAME "kr0.rel"
-#endif
-bool tryModernLoad()
+static bool tryModernLoad()
 {
     return tryLoadRel(FILENAME, FILENAME);
 }
 
 /*
-    Main entrypoint
+    Main entrypoint (on blr of spmarioInit)
 */
 extern "C" void loaderMain();
 void loaderMain()
