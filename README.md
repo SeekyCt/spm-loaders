@@ -127,6 +127,9 @@ Creates a save file with a loader (ex. saveloader) + the exploit to load it.
 
 Creates a gecko code that will load a payload on boot, done by `tools/makegecko.py`.
 
+- If using gecko codes on console, the `VI Hook` hooktype should be used
+    - This allows for payloads to use a wider range of hook locations during the game's boot process
+
 ## Riivolution Implementation
 
 Creates a riivolution XML snippet that will load a payload on boot.
