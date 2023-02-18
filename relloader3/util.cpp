@@ -18,8 +18,9 @@ void * alloc(size_t size, u32 alignment)
         return firstAlloc;
     
     // Fall back to main heap
+    // Use negative alignment to allocate from tail so that relF.rel won't shift 
     handle = spm::memory::memory_wp->heapHandle[spm::memory::HEAP_MAIN];
-    return wii::mem::MEMAllocFromExpHeapEx(handle, size, alignment);
+    return wii::mem::MEMAllocFromExpHeapEx(handle, size, -alignment);
 }
 
 void _writeBranch(void * ptr, void * destination, bool link)
