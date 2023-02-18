@@ -11,8 +11,7 @@ constexpr u32 MAGIC = 0x524c6433; // 'RLd3'
 
 struct RelLoaderContext
 {
-/* 0x0 */ char magic[4]; // RLd3
-/* 0x4 */ void * hostRelContext;
+/* 0x0 */ void * hostRelContext;
 };
 
 typedef spm_loaders::TPayloadHeader<RelLoaderContext, MAGIC> RelLoaderHeader;
