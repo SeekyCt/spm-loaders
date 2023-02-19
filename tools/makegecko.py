@@ -3,59 +3,12 @@ Makes a gecko code to load and execute a statically-linked payload in RAM
 """
 
 from argparse import ArgumentParser
-import struct
+
+from common import be32, make_branch_instr, Payload
 
 
 IMPLEMENTATION_TYPE = 0
 IMPLEMENTATION_VERSION = 1
-
-
-class Payload:
-    data: bytes
-
-    payload_magic: int
-    payload_ver: int
-    context: int
-    load_addr: int
-    entrypoint: int
-    hook_addr: int
-    impl_type: int
-    impl_ver: int
-
-    HEADER_SIZE = 0x28
-
-    def __init__(self, path: str, impl_type: int, impl_ver: int):
-        # Load raw data
-        with open(path, 'rb') as f:
-            data = bytearray(f.read())
-
-        # Patch implementation type
-        struct.pack_into(">II", data, 0x20, impl_type, impl_ver)
-
-        # Parse header
-        (
-            header_magic, header_ver, payload_magic, payload_ver, context, load_addr, entrypoint,
-            hook_addr, impl_type, impl_ver
-        ) = struct.unpack(">4sI4sIIIIIII", data[:self.HEADER_SIZE])
-
-        assert header_magic == b"SPMP"
-        assert header_ver == 1
-
-        self.data = bytes(data)
-        self.payload_magic = payload_magic
-        self.payload_ver = payload_ver
-        self.context = context
-        self.load_addr = load_addr
-        self.entrypoint = entrypoint
-        self.hook_addr = hook_addr
-        self.impl_type = impl_type
-        self.impl_ver = impl_ver
-
-
-def be32(val: int) -> bytes:
-    """Converts an integer to big-endian 32-bit"""
-
-    return int.to_bytes(val, 4, "big")
 
 
 def gecko_opword(opcode: int, addr: int) -> bytes:
@@ -69,11 +22,7 @@ def make_branch_04(hook_addr: int, dest: int) -> bytes:
     """Makes an 04 gecko code for a branch"""
 
     opword = gecko_opword(0x04, hook_addr)
-
-    delta = dest - hook_addr
-    branch = 0x4800_0000 | (delta & 0x03FF_FFFC)
-    val = be32(branch)
-
+    val = make_branch_instr(hook_addr, dest)
     return opword + val
 
 
