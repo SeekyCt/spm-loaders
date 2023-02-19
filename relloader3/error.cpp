@@ -43,9 +43,9 @@ void NORETURN error(const char * message)
         fullMessage,
         sizeof(fullMessage),
         "[%d|%d|%d] %s",
-        payloadHeader->implementationType,
-        payloadHeader->implementationVersion,
-        payloadHeader->payloadVersion,
+        relloader3::RelLoaderHeader::instance->implementationType,
+        relloader3::RelLoaderHeader::instance->implementationVersion,
+        relloader3::RelLoaderHeader::instance->payloadVersion,
         message
     );
 

@@ -14,7 +14,6 @@ struct RelLoaderContext
 /* 0x0 */ void * hostRelContext;
 };
 
-typedef spm_loaders::TPayloadHeader<RelLoaderContext, MAGIC> RelLoaderHeader;
+typedef spm_loaders::TPayloadHeader<RelLoaderContext, MAGIC, 0x80004200> RelLoaderHeader;
 
-inline RelLoaderHeader * const payloadHeader = (RelLoaderHeader *)0x80004200;
 }

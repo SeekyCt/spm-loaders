@@ -9,7 +9,7 @@ namespace spm_loaders {
 
 constexpr u32 HEADER_MAGIC = 0x53504d50; // 'SPMP'
 
-template <typename tContext, u32 tMagic>
+template <typename tContext, u32 tMagic, u32 tAddr>
 struct TPayloadHeader
 {
 /* 0x00 */ u32 headerMagic; // SPMP
@@ -27,10 +27,12 @@ struct TPayloadHeader
     {
         return headerMagic == HEADER_MAGIC && payloadMagic == tMagic;
     }
+
+    static inline auto const instance = reinterpret_cast<TPayloadHeader<tContext, tMagic, tAddr> *>(tAddr);
 };
 
 namespace {
-typedef TPayloadHeader<void, 0> _PayloadHeader;
+typedef TPayloadHeader<void, 0, 0> _PayloadHeader;
 
 OFFSET_ASSERT(_PayloadHeader, loadAddress, OFFS_PAYLOAD_LOAD_ADDRESS);
 OFFSET_ASSERT(_PayloadHeader, entrypoint, OFFS_PAYLOAD_ENTRYPOINT);
