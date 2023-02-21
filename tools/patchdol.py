@@ -22,11 +22,12 @@ class DolSection:
 
     def contains_addr(self, addr: int) -> bool:
         return self.addr <= addr < self.addr + self.size
-    
+
     def addr_to_offs(self, addr: int) -> int:
         return addr - self.addr + self.offs
 
-class DolReader:
+
+class DolFile:
     OFFS_SEC_OFFSETS = 0
     OFFS_SEC_ADDRS = 0x48
     OFFS_SEC_SIZES = 0x90
@@ -37,7 +38,7 @@ class DolReader:
     def __init__(self, path: str):
         with open(path, "rb") as f:
             self.data = bytearray(f.read())
-        
+
         offsets = [*struct.unpack_from(">18I", self.data, self.OFFS_SEC_OFFSETS)]
         addrs = [*struct.unpack_from(">18I", self.data, self.OFFS_SEC_ADDRS)]
         sizes = [*struct.unpack_from(">18I", self.data, self.OFFS_SEC_SIZES)]
@@ -61,6 +62,11 @@ class DolReader:
         self.write(hook_addr, branch)
 
 
+def patch_dol(dol: DolFile, payload: Payload):
+    dol.write_branch(payload.hook_addr, payload.entrypoint)
+    dol.write(payload.load_addr, payload.data)
+
+
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("dol_path", type=str)
@@ -68,10 +74,9 @@ if __name__ == "__main__":
     parser.add_argument("out_path", type=str)
     args = parser.parse_args()
 
-    dol = DolReader(args.dol_path)
+    dol = DolFile(args.dol_path)
     payload = Payload(args.payload_path, IMPLEMENTATION_TYPE, IMPLEMENTATION_VERSION)
-    dol.write_branch(payload.hook_addr, payload.entrypoint)
-    dol.write(payload.load_addr, payload.data)
+    patch_dol(dol, payload)
 
     with open(args.out_path, "wb") as f:
         f.write(dol.data)
