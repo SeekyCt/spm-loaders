@@ -619,35 +619,44 @@ def main(game_versions: List[GameVersion]):
         )
 
         # Build implementations
-        impl_save = build_impl_save(
-            os.path.join("$outdir", f"wiimario_{game_ver.name}"),
-            os.path.join(builddir, "save"),
-            relloader,
-            game_ver
+        implementations = []
+        implementations.append(
+            build_impl_save(
+                os.path.join("$outdir", f"wiimario_{game_ver.name}"),
+                os.path.join(builddir, "save"),
+                relloader,
+                game_ver
+            )
         )
-        impl_gecko = build_impl_gecko(
-            os.path.join("$outdir", f"gecko_{game_ver.name}.txt"),
-            relloader,
+        implementations.append(
+            build_impl_gecko(
+                os.path.join("$outdir", f"gecko_{game_ver.name}.txt"),
+                relloader,
+            )
         )
-        impl_riivo = build_impl_riivo(
-            os.path.join("$outdir", f"riivolution_{game_ver.name}.bin"),
-            relloader,
-        )
-        impl_dol = build_impl_dol(
-            os.path.join("$outdir", f"{game_ver.name}.dol"),
-            relloader,
-            game_ver
-        )
+        implementations.append(
+            build_impl_riivo(
+                os.path.join("$outdir", f"riivolution_{game_ver.name}.bin"),
+                relloader,
+            )
+            )
+        if os.path.exists(os.path.join(DUMPDIR, game_ver.name, "main.dol")):
+            implementations.append(
+                build_impl_dol(
+                    os.path.join("$outdir", f"{game_ver.name}.dol"),
+                    relloader,
+                    game_ver
+                )
+            )
+        else:
+            print(f"Note: dol not found for {game_ver.name}, skipping dol patch")
 
         # Make alias
         phony = build_phony(
             game_ver.name,
             [
                 relloader,
-                impl_gecko,
-                impl_save,
-                impl_riivo,
-                impl_dol
+                *implementations
             ]
         )
         phony.make_default(n)
