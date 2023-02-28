@@ -13,7 +13,7 @@
 header:
 
 // TODO
-#if defined SPM_EU0
+#if defined SPM_EU0 || defined SPM_EU1
 #define HOOK_OFFS 0x6f8
 #elif defined SPM_US0
 #define HOOK_OFFS 0x590
