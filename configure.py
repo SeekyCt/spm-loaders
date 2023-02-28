@@ -20,6 +20,7 @@ INCDIR = "include"
 BUILDDIR = "build"
 OUTDIR = "out"
 TOOLSDIR = "tools"
+DUMPDIR = "dump"
 
 # Libraries
 SPM_HEADERS = "spm-headers"
@@ -41,6 +42,7 @@ OBJCOPY = os.path.join("$devkitppc", "bin", "powerpc-eabi-objcopy")
 LST2LD = os.path.join("$toolsdir", "lst2ld.py")
 MAKEGECKO = os.path.join("$toolsdir", "makegecko.py")
 MAKEWIIMARIO = os.path.join("$toolsdir", "makewiimario.py")
+PATCHDOL = os.path.join("$toolsdir", "patchdol.py")
 
 ##############
 # Tool Flags #
@@ -131,6 +133,7 @@ def emit_vars(n: Writer):
     n.variable("builddir", BUILDDIR)
     n.variable("outdir", OUTDIR)
     n.variable("toolsdir", TOOLSDIR)
+    n.variable("dumpdir", DUMPDIR)
 
     # Libraries
     n.variable("spm_headers", SPM_HEADERS)
@@ -147,6 +150,7 @@ def emit_vars(n: Writer):
     n.variable("makegecko", MAKEGECKO)
     n.variable("makewiimario", MAKEWIIMARIO)
     n.variable("lst2ld", LST2LD)
+    n.variable("patchdol", PATCHDOL)
 
     # Tool flags
     n.variable("includes", INCLUDES)
@@ -236,6 +240,14 @@ def emit_rules(n: Writer):
     n.rule(
         "makewiimario",
         command = "$python $makewiimario $in \"$savename\" $game_ver $out"
+    )
+
+    # dol & paylod bin -> dol patching
+    # Variables to pass in:
+    #     ?
+    n.rule(
+        "patchdol",
+        command = "$python $patchdol $in $out"
     )
 
 ##################
@@ -440,22 +452,28 @@ class GameVersion:
     """Preprocessor define for this version"""
     define: str
 
-    def __init__(self, name: str, ldscript_dest: str):
+    """Path to the main.dol file for this version"""
+    dol: File
+
+    def __init__(self, name: str):
         # Save name
         self.name = name
 
         # Get preprocessor define
         self.define = f"SPM_{self.name.upper()}"
 
-        # Get lst file
-        lst_name = "eu0" if name == "eu1" else name
+        # Get lst file and dol
+        dol_name = "eu0" if name == "eu1" else name
+        self.dol = SourceFile(
+            os.path.join("$dumpdir", dol_name, "main.dol")
+        )
         self.lst = SourceFile(
-            os.path.join("$spm_headers", "linker", f"spm.{lst_name}.lst")
+            os.path.join("$spm_headers", "linker", f"spm.{dol_name}.lst")
         )
 
         # Get linker script
         self.ldscript = BuiltFile(
-            ldscript_dest,
+            os.path.join("$builddir", name, "symbols.ld"),
             "lst2ld",
             [self.lst]
         )
@@ -513,6 +531,15 @@ def build_impl_riivo(dest: str, payload: BuiltFile) -> BuiltFile:
 
     # TODO
     return payload
+
+def build_impl_dol(dest: str, payload: BuiltFile, game_ver: GameVersion) -> BuiltFile:
+    """Builds the dol implementation of a payload"""
+
+    return BuiltFile(
+        dest,
+        "patchdol",
+        [game_ver.dol, payload]
+    )
 
 def build_saveloader(dest: str, builddir: str, payload: BuiltFile, game_ver: GameVersion
                     ) -> BuiltFile:
@@ -606,6 +633,11 @@ def main(game_versions: List[GameVersion]):
             os.path.join("$outdir", f"riivolution_{game_ver.name}.bin"),
             relloader,
         )
+        impl_dol = build_impl_dol(
+            os.path.join("$outdir", f"{game_ver.name}.dol"),
+            relloader,
+            game_ver
+        )
 
         # Make alias
         phony = build_phony(
@@ -614,7 +646,8 @@ def main(game_versions: List[GameVersion]):
                 relloader,
                 impl_gecko,
                 impl_save,
-                impl_riivo
+                impl_riivo,
+                impl_dol
             ]
         )
         phony.make_default(n)
@@ -626,8 +659,7 @@ def main(game_versions: List[GameVersion]):
 
 game_versions = {
     name : GameVersion(
-        name,
-        os.path.join("$builddir", name, "symbols.ld")
+        name
     )
     for name in [
         "eu0",
