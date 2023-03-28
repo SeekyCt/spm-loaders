@@ -4,24 +4,24 @@
 #include <wii/os.h>
 #include <msl/stdio.h>
 
-#include "diskloader.h"
+#include "dvdloader.h"
 #include "error.h"
 #include "util.h"
 
 namespace relloader3 {
 
-void DiskLoader::buildPath(char * dest, size_t n, const char * filename)
+void DvdLoader::buildPath(char * dest, size_t n, const char * filename)
 {
     msl::stdio::snprintf(dest, n, "./mod/%s", filename);
 }
 
-DiskLoader::DiskLoader(const char * filename)
+DvdLoader::DvdLoader(const char * filename)
     : FileLoader(filename)
 {
 
 }
 
-bool DiskLoader::canLoad()
+bool DvdLoader::canLoad()
 {
     // Build full path
     char path[64];
@@ -31,7 +31,7 @@ bool DiskLoader::canLoad()
     return wii::dvd::DVDConvertPathToEntrynum(path) != -1;
 }
 
-void * DiskLoader::loadImpl()
+void * DvdLoader::loadImpl()
 {
     // Build full path
     char path[64];

@@ -14,7 +14,7 @@
 #include <spm_loaders/relloader.h>
 
 #include "ctors.h"
-#include "diskloader.h"
+#include "dvdloader.h"
 #include "error.h"
 #include "nandloader.h"
 #include "oldrelloader.h"
@@ -63,10 +63,10 @@ RelLoaderContext loaderCtx;
     Set up load methods
 */
 
-static DiskLoader loaderDiskNew = DiskLoader(FILENAME);
+static DvdLoader loaderDiskNew = DvdLoader(FILENAME);
 static RelLoader relLoaderDiskNew = RelLoader(&loaderDiskNew);
 
-static DiskLoader loaderDiskOld = DiskLoader(OLD_DISK_FILENAME);
+static DvdLoader loaderDiskOld = DvdLoader(OLD_DISK_FILENAME);
 static OldRelLoader relLoaderDiskOld = OldRelLoader(&loaderDiskOld);
 
 static NandLoader loaderNandNew = NandLoader(FILENAME);

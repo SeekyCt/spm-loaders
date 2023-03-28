@@ -9,7 +9,7 @@ namespace relloader3 {
 /*
     Loader implementation for the disk ./mod/ folder
 */
-class DiskLoader : public FileLoader
+class DvdLoader : public FileLoader
 {
 protected:
     /*
@@ -20,7 +20,7 @@ protected:
     void * loadImpl() override;
 
 public:
-    DiskLoader(const char * filename);
+    DvdLoader(const char * filename);
     bool canLoad() override;
 };
 
