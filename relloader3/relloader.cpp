@@ -35,8 +35,12 @@ bool RelLoader::tryLoad()
     if (!mLoader->canLoad())
         return false;
 
-    // Load rel
+    // Try load rel
     wii::os::RelHeader * rel = mLoader->load<wii::os::RelHeader>();
+    if (rel == nullptr)
+        return false;
+
+    // Link and execute
     executeRel(rel);
 
     return true;
