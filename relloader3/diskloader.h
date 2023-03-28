@@ -2,16 +2,21 @@
 
 #include <common.h>
 
-#include "loader.h"
+#include "fileloader.h"
 
 namespace relloader3 {
 
-class DiskLoader : public Loader
+/*
+    Loader implementation for the disk ./mod/ folder
+*/
+class DiskLoader : public FileLoader
 {
 protected:
-    const char * mFilename;
-
+    /*
+        Build the full DVD path for a file
+    */
     void buildPath(char * dest, size_t n, const char * filename);
+
     void * loadImpl() override;
 
 public:

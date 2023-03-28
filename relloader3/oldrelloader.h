@@ -26,7 +26,7 @@ public:
     */
     bool tryLoad() override;
 
-    OldRelLoader(Loader * loader);
+    OldRelLoader(FileLoader * loader);
 };
 
 }

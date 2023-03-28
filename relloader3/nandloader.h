@@ -2,17 +2,26 @@
 
 #include <common.h>
 
-#include "loader.h"
+#include "fileloader.h"
 
 namespace relloader3 {
 
-class NandLoader : public Loader
+/*
+    Loader implementation for the game save folder
+*/
+class NandLoader : public FileLoader
 {
 protected:
-    const char * mFilename;
+    /*
+        Whether to load in the pcrel.bin format
+    */
     bool mOldMode;
 
+    /*
+        Build the full NAND path for a file
+    */
     void buildPath(char * dest, size_t n, const char * filename);
+
     void * loadImpl() override;
 
 public:

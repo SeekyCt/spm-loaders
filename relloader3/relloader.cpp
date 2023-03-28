@@ -10,7 +10,7 @@
 
 namespace relloader3 {
 
-RelLoader::RelLoader(Loader * loader)
+RelLoader::RelLoader(FileLoader * loader)
 {
     mLoader = loader;
 }

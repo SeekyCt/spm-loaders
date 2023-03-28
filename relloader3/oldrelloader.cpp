@@ -13,7 +13,7 @@ namespace relloader3 {
 
 OldRelLoader * OldRelLoader::finalLoader;
 
-OldRelLoader::OldRelLoader(Loader * loader)
+OldRelLoader::OldRelLoader(FileLoader * loader)
     : RelLoader(loader)
 {
 }
