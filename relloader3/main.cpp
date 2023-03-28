@@ -13,9 +13,12 @@
 
 #include <spm_loaders/relloader.h>
 
-#include "dvd.h"
+#include "ctors.h"
+#include "diskloader.h"
 #include "error.h"
-#include "nand.h"
+#include "nandloader.h"
+#include "oldrelloader.h"
+#include "relloader.h"
 #include "util.h"
 
 namespace relloader3 {
@@ -36,7 +39,7 @@ RelLoaderContext loaderCtx;
 #define OLD_NAND_FILENAME "pcrel.bin"
 
 /*
-    Modern loader filenames
+    New loader filenames
 */
 #ifdef SPM_EU0
     #define FILENAME "eu0.rel"
@@ -56,61 +59,22 @@ RelLoaderContext loaderCtx;
     #define FILENAME "kr0.rel"
 #endif
 
-/*
-    Tries to load, link and execute a rel file, returns true if successful
-*/
-static bool tryLoadRel(const char * diskFilename, const char * nandFilename, bool oldNandMode=false)
-{
-    // Load rel from somewhere
-    auto * rel = (wii::os::RelHeader *) tryDvdLoad(diskFilename);
-    if (rel == nullptr)
-        rel = (wii::os::RelHeader *) tryNandLoad(nandFilename, oldNandMode);
-    if (rel == nullptr)
-        return false;
+static DiskLoader loaderDiskOld = DiskLoader(OLD_DISK_FILENAME);
+static NandLoader loaderNandOld = NandLoader(OLD_NAND_FILENAME, true);
+static DiskLoader loaderDiskNew = DiskLoader(FILENAME);
+static NandLoader loaderNandNew = NandLoader(FILENAME);
 
-    // Allocate bss
-    void * bss = alloc(rel->bssSize, rel->bssAlign);
-    CHECK_PTR(bss, rel->bssSize, "bss alloc");
+static RelLoader relLoaderDiskNew = RelLoader(&loaderDiskNew);
+static RelLoader relLoaderNandNew = RelLoader(&loaderNandNew);
+static OldRelLoader relLoaderDiskOld = OldRelLoader(&loaderDiskOld);
+static OldRelLoader relLoaderNandOld = OldRelLoader(&loaderNandOld);
 
-    // Link
-    bool ret = wii::os::OSLink(rel, bss);
-    CHECK_TRUE(ret, "OSLink");
-
-    // Call prolog
-    rel->prolog();
-
-    return true;
-}
-
-/*
-    Old rel loader - load mod.rel after relF.rel
-*/
-static void doOldLoad(wii::os::RelHeader * relF)
-{
-    // Original instruction at hook
-    relF->prolog();
-
-    CHECK_TRUE(tryLoadRel(OLD_DISK_FILENAME, OLD_NAND_FILENAME, true), "old load");
-}
-static bool tryOldLoad()
-{
-    // Check if either old file exists
-    if (!dvdFileExists(OLD_DISK_FILENAME) && !nandFileExists(OLD_NAND_FILENAME))
-        return false;
-    
-    // Setup to run after relF.rel prolog
-    writeBranchLink(spm::relmgr::relMain, 0x194, doOldLoad);
-
-    return true;
-}
-
-/*
-    Modern rel loader - load rgX.rel after spmarioInit
-*/
-static bool tryModernLoad()
-{
-    return tryLoadRel(FILENAME, FILENAME);
-}
+static RelLoader * relLoaders[] = {
+    &relLoaderDiskNew,
+    &relLoaderDiskOld,
+    &relLoaderNandNew,
+    &relLoaderNandOld
+};
 
 /*
     Main entrypoint (on blr of spmarioInit)
@@ -118,11 +82,21 @@ static bool tryModernLoad()
 extern "C" void loaderMain();
 void loaderMain()
 {
-    wii::os::OSReport("Rel Loader 3 - v1\n");
+    wii::os::OSReport("Rel Loader 3 - v1 aaa\n");
 
-    bool loaded = tryModernLoad();
-    if (!loaded)
-        loaded = tryOldLoad();
+    callCtors();
+
+    bool loaded = false;
+    for (u32 i = 0; i < ARRAY_SIZEOF(relLoaders); i++)
+    {
+        RelLoader * loader = relLoaders[i];
+        if (loader->tryLoad())
+        {
+            loaded = true;
+            break;
+        }
+    }
+
     if (!loaded)
         error("Error: rel not found on disc or in save file");
 }

@@ -1,24 +1,30 @@
 #include <common.h>
-#include <wii/os.h>
+#include <spm/dvdmgr.h>
 #include <wii/ipc.h>
 #include <wii/nand.h>
-#include <ios/ios.h>
+#include <wii/os.h>
 #include <ios/fs.h>
-#include <msl/string.h>
+#include <ios/ios.h>
 #include <msl/stdio.h>
 
+#include "nandloader.h"
 #include "error.h"
-#include "nand.h"
 #include "util.h"
 
 namespace relloader3 {
 
-static void buildPath(char * dest, size_t n, const char * filename)
+void NandLoader::buildPath(char * dest, size_t n, const char * filename)
 {
     char homedir[64];
     wii::nand::NANDGetHomeDir(homedir);
 
     msl::stdio::snprintf(dest, n, "%s/%s", homedir, filename);
+}
+
+NandLoader::NandLoader(const char * filename, bool oldMode)
+{
+    mFilename = filename;
+    mOldMode = oldMode;
 }
 
 static s32 open(const char * path, s32 mode)
@@ -65,10 +71,10 @@ static u32 getLengthOld(s32 fd)
     return readBe32(header);
 }
 
-bool nandFileExists(const char * filename)
+bool NandLoader::canLoad()
 {
     char path[64];
-    buildPath(path, sizeof(path), filename);
+    buildPath(path, sizeof(path), mFilename);
 
     s32 fd = open(path, wii::ipc::IOS_OPEN_READ);
 
@@ -80,10 +86,10 @@ bool nandFileExists(const char * filename)
     return true;
 }
 
-void * tryNandLoad(const char * filename, bool oldMode)
+void * NandLoader::loadImpl()
 {
     char path[64];
-    buildPath(path, sizeof(path), filename);
+    buildPath(path, sizeof(path), mFilename);
 
     s32 fd = open(path, wii::ipc::IOS_OPEN_READ);
 
@@ -91,7 +97,7 @@ void * tryNandLoad(const char * filename, bool oldMode)
         return nullptr;
     
     u32 length;
-    if (oldMode)
+    if (mOldMode)
         length = getLengthOld(fd);
     else
         length = getLength(fd);
@@ -103,7 +109,7 @@ void * tryNandLoad(const char * filename, bool oldMode)
 
     close(fd);
 
-    wii::os::OSReport("Read %s from NAND\n", filename);
+    wii::os::OSReport("Read %s from NAND\n", mFilename);
 
     return mem;
 }

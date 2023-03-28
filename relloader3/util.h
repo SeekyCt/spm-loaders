@@ -3,6 +3,11 @@
 namespace relloader3 {
 
 /*
+    Gets the number of items in an array
+*/
+#define ARRAY_SIZEOF(arr) sizeof(arr)/sizeof(arr[0])
+
+/*
     Rounds a value up to an alignment (must be a power of 2)
 */
 #define ALIGN_TO(val, align) (((val) + ((align)-1)) & ~((align)-1))

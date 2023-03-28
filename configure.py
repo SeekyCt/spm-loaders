@@ -62,7 +62,6 @@ INCLUDES = ' '.join(
 # Passed to C, C++ and asm compilation, and the linker
 MACHDEP = ' '.join([
     "-mno-sdata", # Disable SDA sections since not main binary
-    "-mgcn", # Use ogc linker
     "-DGEKKO", # CPU preprocessor define
     "-mcpu=750", # Set CPU to 750cl
     "-meabi", # Set ppc abi to eabi
@@ -82,7 +81,7 @@ CFLAGS = ' '.join([
     "-ffunction-sections", # Allow function deadstripping
     "-fdata-sections", # Allow data deadstripping
     "-g", # Emit debug info
-    "-O3", # High optimisation for speed
+    "-Os", # High optimisation for speed
     "-Wall", # Enable all warnings
     "-Wextra", # Enable even more warnings
     "-Wpedantic", # Enable even more warnings than that
