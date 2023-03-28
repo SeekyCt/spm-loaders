@@ -82,7 +82,7 @@ static RelLoader * relLoaders[] = {
 extern "C" void loaderMain();
 void loaderMain()
 {
-    wii::os::OSReport("Rel Loader 3 - v1 aaa\n");
+    wii::os::OSReport("Rel Loader 3 - v1\n");
 
     callCtors();
 
