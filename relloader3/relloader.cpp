@@ -31,11 +31,14 @@ void RelLoader::executeRel(wii::os::RelHeader * rel)
 
 bool RelLoader::tryLoad()
 {
+    // Check if file exists
     if (!mLoader->canLoad())
         return false;
 
+    // Load rel
     wii::os::RelHeader * rel = mLoader->load<wii::os::RelHeader>();
     executeRel(rel);
+
     return true;
 }
 

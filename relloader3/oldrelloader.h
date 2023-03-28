@@ -7,16 +7,19 @@
 
 namespace relloader3 {
 
+/*
+    Modified RelLoader to load after relF.rel
+*/
 class OldRelLoader : public RelLoader
 {
 protected:
     /*
-        Instance to call when rel prolog runs
+        Instance to call when relF prolog runs
     */
-    static OldRelLoader * finalLoader;
+    static OldRelLoader * sFinalLoader;
 
     /*
-        Callback for rel prolog hook
+        Callback for relF prolog hook
     */
     static void doOldLoad(wii::os::RelHeader * relF);
 

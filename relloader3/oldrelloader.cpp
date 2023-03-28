@@ -11,11 +11,12 @@
 
 namespace relloader3 {
 
-OldRelLoader * OldRelLoader::finalLoader;
+OldRelLoader * OldRelLoader::sFinalLoader;
 
 OldRelLoader::OldRelLoader(FileLoader * loader)
     : RelLoader(loader)
 {
+
 }
 
 void OldRelLoader::doOldLoad(wii::os::RelHeader * relF)
@@ -24,7 +25,7 @@ void OldRelLoader::doOldLoad(wii::os::RelHeader * relF)
     relF->prolog();
 
     // Load rel
-    CHECK_TRUE(finalLoader->RelLoader::tryLoad(), "old load");
+    CHECK_TRUE(sFinalLoader->RelLoader::tryLoad(), "old load");
 }
 
 bool OldRelLoader::tryLoad()
@@ -35,7 +36,7 @@ bool OldRelLoader::tryLoad()
     
     // Setup to run after relF.rel prolog
     writeBranchLink(spm::relmgr::relMain, 0x194, doOldLoad);
-    finalLoader = this;
+    sFinalLoader = this;
 
     return true;
 }
