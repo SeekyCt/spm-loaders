@@ -59,14 +59,20 @@ RelLoaderContext loaderCtx;
     #define FILENAME "kr0.rel"
 #endif
 
-static DiskLoader loaderDiskOld = DiskLoader(OLD_DISK_FILENAME);
-static NandLoader loaderNandOld = NandLoader(OLD_NAND_FILENAME, true);
-static DiskLoader loaderDiskNew = DiskLoader(FILENAME);
-static NandLoader loaderNandNew = NandLoader(FILENAME);
+/*
+    Set up load methods
+*/
 
+static DiskLoader loaderDiskNew = DiskLoader(FILENAME);
 static RelLoader relLoaderDiskNew = RelLoader(&loaderDiskNew);
-static RelLoader relLoaderNandNew = RelLoader(&loaderNandNew);
+
+static DiskLoader loaderDiskOld = DiskLoader(OLD_DISK_FILENAME);
 static OldRelLoader relLoaderDiskOld = OldRelLoader(&loaderDiskOld);
+
+static NandLoader loaderNandNew = NandLoader(FILENAME);
+static RelLoader relLoaderNandNew = RelLoader(&loaderNandNew);
+
+static NandLoader loaderNandOld = NandLoader(OLD_NAND_FILENAME, true);
 static OldRelLoader relLoaderNandOld = OldRelLoader(&loaderNandOld);
 
 static RelLoader * relLoaders[] = {
@@ -84,8 +90,10 @@ void loaderMain()
 {
     wii::os::OSReport("Rel Loader 3 - v1\n");
 
+    // Run setup
     callCtors();
 
+    // Try all load methods in order
     bool loaded = false;
     for (u32 i = 0; i < ARRAY_SIZEOF(relLoaders); i++)
     {
@@ -97,6 +105,7 @@ void loaderMain()
         }
     }
 
+    // Check success
     if (!loaded)
         error("Error: rel not found on disc or in save file");
 }
