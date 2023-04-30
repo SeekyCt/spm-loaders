@@ -228,13 +228,12 @@ def patch_wiimario(spmg: bytes, pouch: bytes, payload: bytes, version: str) -> T
     desc_msg_addr = MarioPouchWork.ADDR[version] + desc_msg_offs
     item_id, desc_msg_ptr_offs = find_desc_msg_loc(version)
     payload_offs = SpmarioGlobals.OFFS_LSWF
-    assert (
-        len(payload) < (
-            SpmarioGlobals.SIZE_LSWF +
-            SpmarioGlobals.SIZE_LSW +
-            SpmarioGlobals.SIZE_COIN_ENTRIES
-        )
-    ), "Payload too big"
+    max_size = (
+        SpmarioGlobals.SIZE_LSWF +
+        SpmarioGlobals.SIZE_LSW +
+        SpmarioGlobals.SIZE_COIN_ENTRIES
+    )
+    assert len(payload) < max_size, f"Payload too big (0x{len(payload):x}/0x{max_size:x})"
     payload_addr = SpmarioGlobals.ADDR[version] + payload_offs
 
     # Write exploit string
