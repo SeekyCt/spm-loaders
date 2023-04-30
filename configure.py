@@ -67,6 +67,7 @@ MACHDEP = ' '.join([
     "-meabi", # Set ppc abi to eabi
     "-mhard-float", # Enable hardware floats
     "-nostdlib", # Don't link std lib
+    "-lgcc", # Link gcc helper functions
     "-mregnames", # Enable r prefix for registers in asm
     "-nostdinc", # Disable including std lib headers
     "-ffreestanding", # Tell compiler environment isn't hosted
@@ -213,7 +214,7 @@ def emit_rules(n: Writer):
     #     flags: extra linker flags
     n.rule(
         "ld",
-        command = "$cc $ldflags $flags $ldscripts $in -o $out -Wl,-Map,$map",
+        command = "$cc $in $ldflags $flags $ldscripts -o $out -Wl,-Map,$map",
         description = "LD $out"
     )
     n.newline()
