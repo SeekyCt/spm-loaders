@@ -31,35 +31,34 @@ bool DvdLoader::canLoad()
     return wii::dvd::DVDConvertPathToEntrynum(path) != -1;
 }
 
-void * DvdLoader::loadImpl()
+u32 DvdLoader::getLength()
 {
     // Build full path
     char path[64];
     buildPath(path, sizeof(path), mFilename);
 
-    // Try open
-    spm::dvdmgr::DVDEntry * entry = spm::dvdmgr::DVDMgrOpen(path, 2, 0);
-
-    // Fail if not opened
-    if (entry == nullptr)
-        return nullptr;
-
     // Get length
-    u32 length = ALIGN_TO(spm::dvdmgr::DVDMgrGetLength(entry), DVD_ALIGN);
- 
-    // Allocate memory
-    void * mem = alloc(length, DVD_ALIGN);
-    CHECK_PTR(mem, length, "file alloc");
-
-    // Read file
-    spm::dvdmgr::DVDMgrRead(entry, mem, length, 0);
-
-    // Close file
+    spm::dvdmgr::DVDEntry * entry = spm::dvdmgr::DVDMgrOpen(path, 2, 0);
+    u32 length = spm::dvdmgr::DVDMgrGetLength(entry);
     spm::dvdmgr::DVDMgrClose(entry);
+    return length;
+}
 
-    wii::os::OSReport("Read %s from DVD\n", mFilename);
+u32 DvdLoader::getAlign()
+{
+    return DVD_ALIGN;
+}
 
-    return mem;    
+void DvdLoader::loadImpl(void * dest, u32 length)
+{
+    // Build full path
+    char path[64];
+    buildPath(path, sizeof(path), mFilename);
+
+    // Load file contents
+    spm::dvdmgr::DVDEntry * entry = spm::dvdmgr::DVDMgrOpen(path, 2, 0);
+    spm::dvdmgr::DVDMgrRead(entry, dest, length, 0);
+    spm::dvdmgr::DVDMgrClose(entry);
 }
 
 }

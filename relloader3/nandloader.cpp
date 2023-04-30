@@ -14,50 +14,12 @@
 namespace relloader3 {
 
 /*
-    Open a NAND file
-*/
-static s32 open(const char * path, s32 mode)
-{
-    s32 fd = wii::ipc::IOS_Open(path, mode);
-
-    if (fd != ios::fs::ERR_FS_ENOENT)
-        CHECK_ERROR(fd, "IOS_Open");
-    
-    return fd;
-}
-
-/*
-    Close a NAND file
-*/
-static void close(s32 fd)
-{
-    s32 ret = wii::ipc::IOS_Close(fd);
-    CHECK_ERROR(ret, "IOS_Close");
-}
-
-/*
-    Read from a NAND file
-*/
-static s32 read(s32 fd, void * mem, u32 length)
-{
-    s32 ret = wii::ipc::IOS_Read(fd, mem, length);
-
-    CHECK_ERROR(ret, "IOS_Read");
-
-    return ret;
-}
-
-/*
     Get the length of a NAND file
 */
-static u32 getLength(s32 fd)
+static u32 getLengthNew(s32 fd)
 {
     ios::fs::FsFileStats ALIGNED(IOS_ALIGN) stats;
-    
-    s32 ret = wii::ipc::IOS_Ioctl(fd, ios::fs::IOCTL_FS_GET_FILE_STATS, nullptr, 0, &stats, sizeof(stats));
-    
-    CHECK_ERROR(ret, "IOS_Ioctl");
-    
+    wii::ipc::IOS_Ioctl(fd, ios::fs::IOCTL_FS_GET_FILE_STATS, nullptr, 0, &stats, sizeof(stats));
     return stats.length;
 }
 
@@ -67,8 +29,7 @@ static u32 getLength(s32 fd)
 static u32 getLengthOld(s32 fd)
 {
     u8 header[0x20] ALIGNED(NAND_ALIGN);
-    read(fd, header, sizeof(header));
-
+    wii::ipc::IOS_Read(fd, header, sizeof(header));
     return readBe32(header);
 }
 
@@ -95,52 +56,56 @@ bool NandLoader::canLoad()
     buildPath(path, sizeof(path), mFilename);
 
     // Try open
-    s32 fd = open(path, wii::ipc::IOS_OPEN_READ);
+    s32 fd = wii::ipc::IOS_Open(path, wii::ipc::IOS_OPEN_READ);
 
     // Fail if not opened
     if (fd == ios::fs::ERR_FS_ENOENT)
         return false;
 
     // Clean up if opened
-    close(fd);
+    wii::ipc::IOS_Close(fd);
 
     // Success
     return true;
 }
 
-void * NandLoader::loadImpl()
+u32 NandLoader::getLength()
 {
     // Build full path
     char path[64];
     buildPath(path, sizeof(path), mFilename);
 
-    // Try open file
-    s32 fd = open(path, wii::ipc::IOS_OPEN_READ);
-
-    // Fail if not opened
-    if (fd == ios::fs::ERR_FS_ENOENT)
-        return nullptr;
-
     // Get length
+    s32 fd = wii::ipc::IOS_Open(path, wii::ipc::IOS_OPEN_READ);
     u32 length;
     if (mOldMode)
         length = getLengthOld(fd);
     else
-        length = getLength(fd);
+        length = getLengthNew(fd);
+    wii::ipc::IOS_Close(fd);
 
-    // Allocate space for file
-    void * mem = alloc(ALIGN_TO(length, IOS_ALIGN), IOS_ALIGN);
-    CHECK_PTR(mem, length, "file alloc");
+    return length;
+}
+
+u32 NandLoader::getAlign()
+{
+    return IOS_ALIGN;
+}
+
+void NandLoader::loadImpl(void * dest, u32 length)
+{
+    // Build full path
+    char path[64];
+    buildPath(path, sizeof(path), mFilename);
+
+    // Open file
+    s32 fd = wii::ipc::IOS_Open(path, wii::ipc::IOS_OPEN_READ);
 
     // Read from file
-    read(fd, mem, length);
+    wii::ipc::IOS_Read(fd, dest, length);
 
     // Close file
-    close(fd);
-
-    wii::os::OSReport("Read %s from NAND\n", mFilename);
-
-    return mem;
+    wii::ipc::IOS_Close(fd);
 }
 
 }

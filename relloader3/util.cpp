@@ -9,7 +9,7 @@ namespace relloader3 {
 void * alloc(size_t size, u32 alignment)
 {
     // Enforce minimum alignment
-    alignment = alignment > 0x20 ? alignment : 0x20;
+    alignment = MAX(alignment, 0x20);
 
     // Try unused heap first
     auto handle = spm::memory::memory_wp->heapHandle[spm::memory::HEAP_MEM1_UNUSED];
@@ -21,6 +21,12 @@ void * alloc(size_t size, u32 alignment)
     // Use negative alignment to allocate from tail so that relF.rel won't shift 
     handle = spm::memory::memory_wp->heapHandle[spm::memory::HEAP_MAIN];
     return wii::mem::MEMAllocFromExpHeapEx(handle, size, -alignment);
+}
+
+void free(void * buf)
+{
+    wii::mem::MEMHeapHandle heap = wii::mem::MEMFindContainHeap(buf);
+    wii::mem::MEMFreeToExpHeap(heap, buf);
 }
 
 void _writeBranch(void * ptr, void * destination, bool link)

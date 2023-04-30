@@ -35,10 +35,13 @@ bool RelLoader::tryLoad()
     if (!mLoader->canLoad())
         return false;
 
-    // Try load rel
-    wii::os::RelHeader * rel = mLoader->load<wii::os::RelHeader>();
-    if (rel == nullptr)
-        return false;
+    // Get alignment from file header
+    auto * header = mLoader->load<wii::os::RelHeader>(sizeof(wii::os::RelHeader));
+    u32 relAlign = header->align;
+    free(header);
+
+    // Load rel
+    auto * rel = mLoader->load<wii::os::RelHeader>(mLoader->getLength(), relAlign);
 
     // Link and execute
     executeRel(rel);

@@ -13,6 +13,11 @@ namespace relloader3 {
 #define ALIGN_TO(val, align) (((val) + ((align)-1)) & ~((align)-1))
 
 /*
+    Gets the maximum of 2 values
+*/
+#define MAX(a, b) (a > b ? a : b)
+
+/*
     Reads a 32-bit unsigned big endian integer from a byte stream
 */
 inline u32 readBe32(u8 * data)
@@ -25,6 +30,11 @@ inline u32 readBe32(u8 * data)
     Uses the unused MEM1 heap if there's space, falls back to the main heap otherwise
 */
 void * alloc(size_t size, u32 alignment = 0);
+
+/*
+    Frees memory allocated by alloc
+*/
+void free(void * buf);
 
 /*
     Writes a bl within a function to another function

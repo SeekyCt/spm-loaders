@@ -22,11 +22,13 @@ protected:
     */
     void buildPath(char * dest, size_t n, const char * filename);
 
-    void * loadImpl() override;
+    u32 getAlign() override;
+    void loadImpl(void * dest, u32 length) override;
 
 public:
     NandLoader(const char * filename, bool oldMode=false);
     bool canLoad() override;
+    u32 getLength() override;
 };
 
 }
