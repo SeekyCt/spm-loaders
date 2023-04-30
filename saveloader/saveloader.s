@@ -2,6 +2,7 @@
     SPDX-License-Identifier: GPL-3.0-or-later
     Copyright 2020 Linus S. (aka PistonMiner)
     Copyright 2021 Zephiles
+    Copyright 2023 Seeky
 
     This is heavily based off of the original TTYD save exploit code by
     PistonMiner, and Zephiles' original SPM port, slightly edited by Seeky
