@@ -2,6 +2,7 @@
 
 #include <common.h>
 
+#include "error.h"
 #include "util.h"
 
 namespace relloader3 {
@@ -46,6 +47,7 @@ public:
     {
         length = ALIGN_TO(length, mAlignment);
         void * buf = alloc(length, MAX(alignment, mAlignment));
+        CHECK_ALLOC(buf, length);
         loadImpl(buf, length);
         return reinterpret_cast<T *>(buf);
     }
