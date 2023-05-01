@@ -29,12 +29,8 @@ void RelLoader::executeRel(wii::os::RelHeader * rel)
     rel->prolog();    
 }
 
-bool RelLoader::tryLoad()
+void RelLoader::load()
 {
-    // Check if file exists
-    if (!mLoader->canLoad())
-        return false;
-
     // Get alignment from file header
     auto * header = mLoader->load<wii::os::RelHeader>(sizeof(wii::os::RelHeader));
     u32 relAlign = header->align;
@@ -45,8 +41,6 @@ bool RelLoader::tryLoad()
 
     // Link and execute
     executeRel(rel);
-
-    return true;
 }
 
 }

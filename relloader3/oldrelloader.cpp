@@ -25,20 +25,14 @@ void OldRelLoader::doOldLoad(wii::os::RelHeader * relF)
     relF->prolog();
 
     // Load rel
-    CHECK_TRUE(sFinalLoader->RelLoader::tryLoad());
+    sFinalLoader->RelLoader::load();
 }
 
-bool OldRelLoader::tryLoad()
+void OldRelLoader::load()
 {
-    // Check if old file exists
-    if (!mLoader->canLoad())
-        return false;
-    
     // Setup to run after relF.rel prolog
     writeBranchLink(spm::relmgr::relMain, 0x194, doOldLoad);
     sFinalLoader = this;
-
-    return true;
 }
 
 }

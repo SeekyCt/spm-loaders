@@ -25,9 +25,18 @@ protected:
 
 public:
     /*
-        Attempt to load and execute the rel
+        Checks if the file can be loaded
     */
-    virtual bool tryLoad();
+    bool canLoad()
+    {
+        return mLoader->canLoad();
+    }
+
+    /*
+        Load and execute the rel
+    */
+    virtual void load();
+
 
     /*
         Create a rel loader for a file

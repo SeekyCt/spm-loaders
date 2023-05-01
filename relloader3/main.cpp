@@ -98,8 +98,10 @@ void loaderMain()
     for (u32 i = 0; i < ARRAY_SIZEOF(relLoaders); i++)
     {
         RelLoader * loader = relLoaders[i];
-        if (loader->tryLoad())
+        if (loader->canLoad())
         {
+            wii::os::OSReport("Use loader %d\n", i);
+            loader->load();
             loaded = true;
             break;
         }

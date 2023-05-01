@@ -25,9 +25,9 @@ protected:
 
 public:
     /*
-        Override to load after 
+        Override to load after relF.rel
     */
-    bool tryLoad() override;
+    void load() override;
 
     OldRelLoader(FileLoader * loader);
 };
