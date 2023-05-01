@@ -49,41 +49,32 @@ static void printStackTrace(char * dest, u32 destSize)
 
 void NORETURN assertionError(const char * file, s32 line, s32 code)
 {
-    char message[128];
-
-    msl::stdio::snprintf(
-        message,
-        sizeof(message),
-        "%s line %d:\nfailed with %d",
-        file,
-        line,
-        code
-    );
-
-    error(message);
-}
-
-void NORETURN error(const char * message)
-{
-    char fullMessage[256];
+    char message[256];
 
     u32 numWrote = msl::stdio::snprintf(
-        fullMessage,
-        sizeof(fullMessage),
-        "[%c|%d|%d|%d|%d|%d] %s\n",
+        message,
+        sizeof(message),
+        "[%c|%d|%d|%d|%d|%d] %s %d %d\n",
         *(char *)0x80000003,
         *(u8 *)0x80000007,
         relloader3::RelLoaderHeader::instance->implementationType,
         relloader3::RelLoaderHeader::instance->implementationVersion,
         relloader3::RelLoaderHeader::instance->payloadVersion,
         loaderUsed,
-        message
+        file,
+        line,
+        code
     );
-    printStackTrace(fullMessage + numWrote, sizeof(fullMessage) - numWrote);
+    printStackTrace(message + numWrote, sizeof(message) - numWrote);
 
+    error(message);
+}
+
+void NORETURN error(const char * message)
+{
     static const wii::gx::GXColor fg = {0xff, 0xff, 0xff, 0xff};
     static const wii::gx::GXColor bg = {0x00, 0x00, 0x00, 0xff};
-    wii::os::OSFatal(&fg, &bg, fullMessage);
+    wii::os::OSFatal(&fg, &bg, message);
 }
 
 }
