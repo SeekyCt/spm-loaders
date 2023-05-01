@@ -62,18 +62,18 @@ RelLoaderContext loaderCtx;
     Set up load methods
 */
 
-static DvdLoader loaderDiskNew = DvdLoader(FILENAME);
-static DvdLoader loaderDiskOld = DvdLoader(OLD_DISK_FILENAME);
-static NandLoader loaderNandNew = NandLoader(FILENAME);
-static NandLoader loaderNandOld = NandLoader(OLD_NAND_FILENAME, true);
-
-struct LoadType
+struct LoadMethod
 {
     FileLoader * loader;
     bool oldMode;
 };
 
-static LoadType loadTypes[] = {
+static DvdLoader loaderDiskNew = DvdLoader(FILENAME);
+static DvdLoader loaderDiskOld = DvdLoader(OLD_DISK_FILENAME);
+static NandLoader loaderNandNew = NandLoader(FILENAME);
+static NandLoader loaderNandOld = NandLoader(OLD_NAND_FILENAME, true);
+
+static LoadMethod loadMethods[] = {
     {&loaderDiskNew, false},
     {&loaderDiskOld, true},
     {&loaderNandNew, false},
@@ -93,16 +93,18 @@ void loaderMain()
 
     // Try all load methods in order
     bool loaded = false;
-    for (u32 i = 0; i < ARRAY_SIZEOF(loadTypes); i++)
+    for (u32 i = 0; i < ARRAY_SIZEOF(loadMethods); i++)
     {
-        LoadType * loadType = loadTypes + i;
-        if (loadType->loader->canLoad())
+        LoadMethod * method = loadMethods + i;
+        if (method->loader->canLoad())
         {
             logLoaderUsed(i);
-            if (loadType->oldMode)
-                loadRelOld(loadType->loader);
+
+            if (method->oldMode)
+                loadRelOld(method->loader);
             else
-                loadRel(loadType->loader);
+                loadRel(method->loader);
+
             loaded = true;
             break;
         }
