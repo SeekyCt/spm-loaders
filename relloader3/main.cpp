@@ -17,7 +17,6 @@
 #include "dvdloader.h"
 #include "error.h"
 #include "nandloader.h"
-#include "oldrelloader.h"
 #include "relloader.h"
 #include "util.h"
 
@@ -64,22 +63,21 @@ RelLoaderContext loaderCtx;
 */
 
 static DvdLoader loaderDiskNew = DvdLoader(FILENAME);
-static RelLoader relLoaderDiskNew = RelLoader(&loaderDiskNew);
-
 static DvdLoader loaderDiskOld = DvdLoader(OLD_DISK_FILENAME);
-static OldRelLoader relLoaderDiskOld = OldRelLoader(&loaderDiskOld);
-
 static NandLoader loaderNandNew = NandLoader(FILENAME);
-static RelLoader relLoaderNandNew = RelLoader(&loaderNandNew);
-
 static NandLoader loaderNandOld = NandLoader(OLD_NAND_FILENAME, true);
-static OldRelLoader relLoaderNandOld = OldRelLoader(&loaderNandOld);
 
-static RelLoader * relLoaders[] = {
-    &relLoaderDiskNew,
-    &relLoaderDiskOld,
-    &relLoaderNandNew,
-    &relLoaderNandOld
+struct LoadType
+{
+    FileLoader * loader;
+    bool oldMode;
+};
+
+static LoadType loadTypes[] = {
+    {&loaderDiskNew, false},
+    {&loaderDiskOld, true},
+    {&loaderNandNew, false},
+    {&loaderNandOld, true}
 };
 
 /*
@@ -95,13 +93,16 @@ void loaderMain()
 
     // Try all load methods in order
     bool loaded = false;
-    for (u32 i = 0; i < ARRAY_SIZEOF(relLoaders); i++)
+    for (u32 i = 0; i < ARRAY_SIZEOF(loadTypes); i++)
     {
-        RelLoader * loader = relLoaders[i];
-        if (loader->canLoad())
+        LoadType * loadType = loadTypes + i;
+        if (loadType->loader->canLoad())
         {
             logLoaderUsed(i);
-            loader->load();
+            if (loadType->oldMode)
+                loadRelOld(loadType->loader);
+            else
+                loadRel(loadType->loader);
             loaded = true;
             break;
         }

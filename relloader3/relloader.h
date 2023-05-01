@@ -8,40 +8,14 @@
 namespace relloader3 {
 
 /*
-    Loads and executes a rel file from a loader
+    Load and execute a rel
 */
-class RelLoader
-{
-protected:
-    /*
-        Loader to get the rel from
-    */
-    FileLoader * mLoader;
+void loadRel(FileLoader * loader);
 
-    /*
-        Link and execute a rel file in RAM
-    */
-    void executeRel(wii::os::RelHeader * rel);
+/*
+    Load and execute a rel after relF.rel
+*/
+void loadRelOld(FileLoader * loader);
 
-public:
-    /*
-        Checks if the file can be loaded
-    */
-    bool canLoad()
-    {
-        return mLoader->canLoad();
-    }
-
-    /*
-        Load and execute the rel
-    */
-    virtual void load();
-
-
-    /*
-        Create a rel loader for a file
-    */
-    RelLoader(FileLoader * loader);
-};
 
 }

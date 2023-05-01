@@ -1,5 +1,6 @@
 #include <common.h>
 #include <spm/dvdmgr.h>
+#include <spm/relmgr.h>
 #include <wii/dvd.h>
 #include <wii/os.h>
 #include <msl/stdio.h>
@@ -10,12 +11,7 @@
 
 namespace relloader3 {
 
-RelLoader::RelLoader(FileLoader * loader)
-{
-    mLoader = loader;
-}
-
-void RelLoader::executeRel(wii::os::RelHeader * rel)
+static void executeRel(wii::os::RelHeader * rel)
 {
     // Allocate bss
     void * bss = alloc(rel->bssSize, rel->bssAlign);
@@ -29,18 +25,36 @@ void RelLoader::executeRel(wii::os::RelHeader * rel)
     rel->prolog();    
 }
 
-void RelLoader::load()
+void loadRel(FileLoader * loader)
 {
     // Get alignment from file header
-    auto * header = mLoader->load<wii::os::RelHeader>(sizeof(wii::os::RelHeader));
+    auto * header = loader->load<wii::os::RelHeader>(sizeof(wii::os::RelHeader));
     u32 relAlign = header->align;
     free(header);
 
     // Load rel
-    auto * rel = mLoader->load<wii::os::RelHeader>(mLoader->getLength(), relAlign);
+    auto * rel = loader->load<wii::os::RelHeader>(loader->getLength(), relAlign);
 
     // Link and execute
     executeRel(rel);
+}
+
+static FileLoader * finalLoader;
+
+static void doOldLoad(wii::os::RelHeader * relF)
+{
+    // Original instruction at hook
+    relF->prolog();
+
+    // Load rel
+    loadRel(finalLoader);
+}
+
+void loadRelOld(FileLoader * loader)
+{
+    // Setup to run after relF.rel prolog
+    writeBranchLink(spm::relmgr::relMain, 0x194, doOldLoad);
+    finalLoader = loader;
 }
 
 }
