@@ -7,7 +7,7 @@
 namespace relloader3 {
 
 /*
-    Loader implementation for the disk ./mod/ folder
+    FileLoader implementation for the disk ./mod/ folder
 */
 class DvdLoader : public FileLoader
 {
