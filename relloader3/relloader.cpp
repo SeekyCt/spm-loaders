@@ -11,6 +11,9 @@
 
 namespace relloader3 {
 
+/*
+    Links and executes a rel
+*/
 static void executeRel(wii::os::RelHeader * rel)
 {
     // Allocate bss
@@ -39,8 +42,14 @@ void loadRel(FileLoader * loader)
     executeRel(rel);
 }
 
+/*
+    The loader to be used in old mode
+*/
 static FileLoader * finalLoader;
 
+/*
+    Callback to load the rel in old mode
+*/
 static void doOldLoad(wii::os::RelHeader * relF)
 {
     // Original instruction at hook
