@@ -28,7 +28,7 @@ static u32 getLengthNew(s32 fd)
 */
 static u32 getLengthOld(s32 fd)
 {
-    u8 header[0x20] ALIGNED(NAND_ALIGN);
+    u8 header[0x20] ALIGNED(IOS_ALIGN);
     wii::ipc::IOS_Read(fd, header, sizeof(header));
     return readBe32(header);
 }
