@@ -13,13 +13,34 @@
 
 namespace relloader3 {
 
+static s32 open(const char * path)
+{
+    s32 fd = wii::ipc::IOS_Open(path, wii::ipc::IOS_OPEN_READ);
+    CHECK_ERROR(fd);
+    return fd;
+}
+
+static void close(s32 fd)
+{
+    s32 ret = wii::ipc::IOS_Close(fd);
+    CHECK_ERROR(ret);
+}
+
+static void read(s32 fd, void * dest, u32 length)
+{
+    s32 ret = wii::ipc::IOS_Read(fd, dest, length);
+    CHECK_ERROR(ret);
+}
+
+
 /*
     Get the length of a NAND file
 */
 static u32 getLengthNew(s32 fd)
 {
     ios::fs::FsFileStats ALIGNED(IOS_ALIGN) stats;
-    wii::ipc::IOS_Ioctl(fd, ios::fs::IOCTL_FS_GET_FILE_STATS, nullptr, 0, &stats, sizeof(stats));
+    s32 ret = wii::ipc::IOS_Ioctl(fd, ios::fs::IOCTL_FS_GET_FILE_STATS, nullptr, 0, &stats, sizeof(stats));
+    CHECK_ERROR(ret);
     return stats.length;
 }
 
@@ -29,7 +50,7 @@ static u32 getLengthNew(s32 fd)
 static u32 getLengthOld(s32 fd)
 {
     u8 header[0x20] ALIGNED(IOS_ALIGN);
-    wii::ipc::IOS_Read(fd, header, sizeof(header));
+    read(fd, header, sizeof(header));
     return readBe32(header);
 }
 
@@ -37,7 +58,8 @@ void NandLoader::buildPath(char * dest, size_t n, const char * filename)
 {
     // Get game save folder path
     char homedir[64];
-    wii::nand::NANDGetHomeDir(homedir);
+    s32 ret = wii::nand::NANDGetHomeDir(homedir);
+    CHECK_ERROR(ret);
 
     // Append filename to path
     msl::stdio::snprintf(dest, n, "%s/%s", homedir, filename);
@@ -56,14 +78,14 @@ bool NandLoader::canLoad()
     buildPath(path, sizeof(path), mFilename);
 
     // Try open
-    s32 fd = wii::ipc::IOS_Open(path, wii::ipc::IOS_OPEN_READ);
+    s32 fd = open(path);
 
     // Fail if not opened
     if (fd == ios::fs::ERR_FS_ENOENT)
         return false;
 
     // Clean up if opened
-    wii::ipc::IOS_Close(fd);
+    close(fd);
 
     // Success
     return true;
@@ -76,13 +98,13 @@ u32 NandLoader::getLength()
     buildPath(path, sizeof(path), mFilename);
 
     // Get length
-    s32 fd = wii::ipc::IOS_Open(path, wii::ipc::IOS_OPEN_READ);
+    s32 fd = open(path);
     u32 length;
     if (mOldMode)
         length = getLengthOld(fd);
     else
         length = getLengthNew(fd);
-    wii::ipc::IOS_Close(fd);
+    close(fd);
 
     return length;
 }
@@ -94,13 +116,13 @@ void NandLoader::loadImpl(void * dest, u32 length)
     buildPath(path, sizeof(path), mFilename);
 
     // Open file
-    s32 fd = wii::ipc::IOS_Open(path, wii::ipc::IOS_OPEN_READ);
+    s32 fd = open(path);
 
     // Read from file
-    wii::ipc::IOS_Read(fd, dest, length);
+    read(fd, dest, length);
 
     // Close file
-    wii::ipc::IOS_Close(fd);
+    close(fd);
 }
 
 }
