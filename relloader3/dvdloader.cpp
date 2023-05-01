@@ -10,6 +10,13 @@
 
 namespace relloader3 {
 
+static spm::dvdmgr::DVDEntry * open(const char * path)
+{
+    spm::dvdmgr::DVDEntry * ret = spm::dvdmgr::DVDMgrOpen(path, 2, 0);
+    CHECK_PTR(ret);
+    return ret;
+}
+
 void DvdLoader::buildPath(char * dest, size_t n, const char * filename)
 {
     msl::stdio::snprintf(dest, n, "./mod/%s", filename);
@@ -38,7 +45,7 @@ u32 DvdLoader::getLength()
     buildPath(path, sizeof(path), mFilename);
 
     // Get length
-    spm::dvdmgr::DVDEntry * entry = spm::dvdmgr::DVDMgrOpen(path, 2, 0);
+    spm::dvdmgr::DVDEntry * entry = open(mFilename);
     u32 length = spm::dvdmgr::DVDMgrGetLength(entry);
     spm::dvdmgr::DVDMgrClose(entry);
     return length;
@@ -51,7 +58,7 @@ void DvdLoader::loadImpl(void * dest, u32 length)
     buildPath(path, sizeof(path), mFilename);
 
     // Load file contents
-    spm::dvdmgr::DVDEntry * entry = spm::dvdmgr::DVDMgrOpen(path, 2, 0);
+    spm::dvdmgr::DVDEntry * entry = open(path);
     spm::dvdmgr::DVDMgrRead(entry, dest, length, 0);
     spm::dvdmgr::DVDMgrClose(entry);
 }
