@@ -31,7 +31,12 @@ void logLoaderUsed(s32 loader);
 /*
     Calls assertionError if a pointer is null
 */
-#define CHECK_PTR(ptr, size) if (ptr == nullptr) ERROR(size)
+#define CHECK_PTR(ptr) if (ptr == nullptr) ERROR(0)
+
+/*
+    Calls assertionError if an allocation is null
+*/
+#define CHECK_ALLOC(ptr, size) if (ptr == nullptr) ERROR(size)
 
 /*
     Displays an error message on screen for a failed assertion

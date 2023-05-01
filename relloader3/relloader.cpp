@@ -19,7 +19,7 @@ void RelLoader::executeRel(wii::os::RelHeader * rel)
 {
     // Allocate bss
     void * bss = alloc(rel->bssSize, rel->bssAlign);
-    CHECK_PTR(bss, rel->bssSize);
+    CHECK_ALLOC(bss, rel->bssSize);
 
     // Link
     bool ret = wii::os::OSLink(rel, bss);
