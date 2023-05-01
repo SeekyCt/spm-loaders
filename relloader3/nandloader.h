@@ -7,7 +7,7 @@
 namespace relloader3 {
 
 /*
-    Loader implementation for the game save folder
+    FileLoader implementation for the game save folder
 */
 class NandLoader : public FileLoader
 {
@@ -17,15 +17,15 @@ protected:
     */
     bool mOldMode;
 
-    /*
-        Build the full NAND path for a file
-    */
-    void buildPath(char * dest, size_t n, const char * filename);
-
     void loadImpl(void * dest, u32 length) override;
 
 public:
-    NandLoader(const char * filename, bool oldMode=false);
+    NandLoader(const char * filename, bool oldMode=false)
+        : FileLoader(filename, IOS_ALIGN)
+    {
+        mOldMode = oldMode;
+    }    
+
     bool canLoad() override;
     u32 getLength() override;
 };

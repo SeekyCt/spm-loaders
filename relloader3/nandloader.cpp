@@ -13,6 +13,9 @@
 
 namespace relloader3 {
 
+/*
+    Opens a file and checks for errors
+*/
 static s32 open(const char * path, bool mustExist=true)
 {
     s32 fd = wii::ipc::IOS_Open(path, wii::ipc::IOS_OPEN_READ);
@@ -21,18 +24,23 @@ static s32 open(const char * path, bool mustExist=true)
     return fd;
 }
 
+/*
+    Closes a file and checks for errors
+*/
 static void close(s32 fd)
 {
     s32 ret = wii::ipc::IOS_Close(fd);
     CHECK_ERROR(ret);
 }
 
+/*
+    Reads a file and checks for errors
+*/
 static void read(s32 fd, void * dest, u32 length)
 {
     s32 ret = wii::ipc::IOS_Read(fd, dest, length);
     CHECK_ERROR(ret);
 }
-
 
 /*
     Get the length of a NAND file
@@ -55,7 +63,10 @@ static u32 getLengthOld(s32 fd)
     return readBe32(header);
 }
 
-void NandLoader::buildPath(char * dest, size_t n, const char * filename)
+/*
+    Builds the full path for a file in the game save folder
+*/
+static void buildPath(char * dest, size_t n, const char * filename)
 {
     // Get game save folder path
     char homedir[64];
@@ -64,12 +75,6 @@ void NandLoader::buildPath(char * dest, size_t n, const char * filename)
 
     // Append filename to path
     msl::stdio::snprintf(dest, n, "%s/%s", homedir, filename);
-}
-
-NandLoader::NandLoader(const char * filename, bool oldMode)
-    : FileLoader(filename, IOS_ALIGN)
-{
-    mOldMode = oldMode;
 }
 
 bool NandLoader::canLoad()
