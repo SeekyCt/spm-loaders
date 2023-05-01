@@ -16,6 +16,9 @@
 
 namespace relloader3 {
 
+/*
+    Id of the loader chosen
+*/
 static s32 loaderUsed = -1;
 
 void logLoaderUsed(s32 loader)
@@ -24,6 +27,9 @@ void logLoaderUsed(s32 loader)
     loaderUsed = loader;
 }
 
+/*
+    Prints a stack trace to a buffer, truncating at destSize
+*/
 static void printStackTrace(char * dest, u32 destSize)
 {
     u32 * p = (u32 *) __builtin_frame_address(0);
@@ -37,7 +43,7 @@ static void printStackTrace(char * dest, u32 destSize)
             end = "<-\n";
         else
             end = "<-";
-        u32 numWrote = msl::stdio::sprintf(dest, "%08x%s", lr, end);
+        u32 numWrote = msl::stdio::snprintf(dest, destSize, "%08x%s", lr, end);
         dest += numWrote;
         destSize -= numWrote;
 
