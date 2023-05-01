@@ -119,6 +119,10 @@ void NandLoader::loadImpl(void * dest, u32 length)
     // Open file
     s32 fd = open(path);
 
+    // Skip over header if needed
+    if (mOldMode)
+        read(fd, dest, IOS_ALIGN);
+
     // Read from file
     read(fd, dest, length);
 
