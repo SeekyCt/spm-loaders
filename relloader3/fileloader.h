@@ -20,7 +20,7 @@ protected:
     /*
         Gets the alignment required for buffer addresses and lengths
     */
-    virtual u32 getAlign();
+    virtual u32 getAlign() = 0;
 
     /*
         Actual file reading implementation
@@ -36,7 +36,7 @@ public:
     /*
         Checks the length of the file
     */
-    virtual u32 getLength();
+    virtual u32 getLength() = 0;
 
     /*
         Loads the file to RAM
