@@ -45,7 +45,7 @@ u32 DvdLoader::getLength()
     buildPath(path, sizeof(path), mFilename);
 
     // Get length
-    spm::dvdmgr::DVDEntry * entry = open(mFilename);
+    spm::dvdmgr::DVDEntry * entry = open(path);
     u32 length = spm::dvdmgr::DVDMgrGetLength(entry);
     spm::dvdmgr::DVDMgrClose(entry);
     return length;
