@@ -70,7 +70,9 @@ void NORETURN error(const char * message)
     u32 numWrote = msl::stdio::snprintf(
         fullMessage,
         sizeof(fullMessage),
-        "[%d|%d|%d|%d] %s\n",
+        "[%c|%d|%d|%d|%d|%d] %s\n",
+        *(char *)0x80000003,
+        *(u8 *)0x80000007,
         relloader3::RelLoaderHeader::instance->implementationType,
         relloader3::RelLoaderHeader::instance->implementationVersion,
         relloader3::RelLoaderHeader::instance->payloadVersion,
