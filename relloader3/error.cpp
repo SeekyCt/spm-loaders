@@ -24,6 +24,29 @@ void logLoaderUsed(s32 loader)
     loaderUsed = loader;
 }
 
+static void printStackTrace(char * dest, u32 destSize)
+{
+    u32 * p = (u32 *) __builtin_frame_address(0);
+    s32 i = 0;
+    while (0x80000000 <= (u32)p && (u32)p <= 0x81ffffff && destSize > 0)
+    {
+        // Write lr save to output
+        u32 lr = p[1];
+        const char * end;
+        if (i % 4 == 3)
+            end = "<-\n";
+        else
+            end = "<-";
+        u32 numWrote = msl::stdio::sprintf(dest, "%08x%s", lr, end);
+        dest += numWrote;
+        destSize -= numWrote;
+
+        // Move to next frame
+        p = (u32 *)p[0];
+        i += 1;
+    }
+}
+
 void NORETURN assertionError(const char * file, s32 line, s32 code)
 {
     char message[128];
@@ -44,16 +67,17 @@ void NORETURN error(const char * message)
 {
     char fullMessage[256];
 
-    msl::stdio::snprintf(
+    u32 numWrote = msl::stdio::snprintf(
         fullMessage,
         sizeof(fullMessage),
-        "[%d|%d|%d|%d] %s",
+        "[%d|%d|%d|%d] %s\n",
         relloader3::RelLoaderHeader::instance->implementationType,
         relloader3::RelLoaderHeader::instance->implementationVersion,
         relloader3::RelLoaderHeader::instance->payloadVersion,
         loaderUsed,
         message
     );
+    printStackTrace(fullMessage + numWrote, sizeof(fullMessage) - numWrote);
 
     static const wii::gx::GXColor fg = {0xff, 0xff, 0xff, 0xff};
     static const wii::gx::GXColor bg = {0x00, 0x00, 0x00, 0xff};
