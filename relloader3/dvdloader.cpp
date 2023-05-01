@@ -10,6 +10,9 @@
 
 namespace relloader3 {
 
+/*
+    Opens a file and checks for errors
+*/
 static spm::dvdmgr::DVDEntry * open(const char * path)
 {
     spm::dvdmgr::DVDEntry * ret = spm::dvdmgr::DVDMgrOpen(path, 2, 0);
@@ -17,15 +20,12 @@ static spm::dvdmgr::DVDEntry * open(const char * path)
     return ret;
 }
 
-void DvdLoader::buildPath(char * dest, size_t n, const char * filename)
+/*
+    Builds the full path for a file in the mod folder
+*/
+static void buildPath(char * dest, size_t n, const char * filename)
 {
     msl::stdio::snprintf(dest, n, "./mod/%s", filename);
-}
-
-DvdLoader::DvdLoader(const char * filename)
-    : FileLoader(filename, DVD_ALIGN)
-{
-
 }
 
 bool DvdLoader::canLoad()

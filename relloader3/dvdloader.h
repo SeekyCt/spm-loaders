@@ -12,15 +12,15 @@ namespace relloader3 {
 class DvdLoader : public FileLoader
 {
 protected:
-    /*
-        Build the full DVD path for a file
-    */
-    void buildPath(char * dest, size_t n, const char * filename);
-
     void loadImpl(void * dest, u32 length) override;
 
 public:
-    DvdLoader(const char * filename);
+    DvdLoader(const char * filename)
+        : FileLoader(filename, DVD_ALIGN)
+    {
+
+    }
+
     bool canLoad() override;
     u32 getLength() override;
 };
