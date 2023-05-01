@@ -14,9 +14,9 @@ namespace relloader3 {
 void logLoaderUsed(s32 loader);
 
 /*
-    Calls assertionError with automatic filename, line and function
+    Calls assertionError with automatic filename and line
 */
-#define ERROR(code) assertionError(__FILE__, __LINE__, __FUNCTION__, code)
+#define ERROR(code) assertionError(__FILE__, __LINE__, code)
 
 /*
     Calls assertionError if an error code is negative
@@ -41,7 +41,7 @@ void logLoaderUsed(s32 loader);
 /*
     Displays an error message on screen for a failed assertion
 */
-void NORETURN assertionError(const char * file, s32 line, const char * function, s32 code);
+void NORETURN assertionError(const char * file, s32 line, s32 code);
 
 /*
     Displays an error message on screen

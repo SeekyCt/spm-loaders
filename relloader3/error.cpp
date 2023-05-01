@@ -24,17 +24,16 @@ void logLoaderUsed(s32 loader)
     loaderUsed = loader;
 }
 
-void NORETURN assertionError(const char * file, s32 line, const char * function, s32 code)
+void NORETURN assertionError(const char * file, s32 line, s32 code)
 {
     char message[128];
 
     msl::stdio::snprintf(
         message,
         sizeof(message),
-        "%s line %d (%s):\nfailed with %d",
+        "%s line %d:\nfailed with %d",
         file,
         line,
-        function,
         code
     );
 
