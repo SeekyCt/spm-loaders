@@ -18,9 +18,9 @@ protected:
     const char * mFilename;
 
     /*
-        Gets the alignment required for buffer addresses and lengths
+        Alignment required for buffer addresses and lengths
     */
-    virtual u32 getAlign() = 0;
+    u32 mAlignment;
 
     /*
         Actual file reading implementation
@@ -44,9 +44,8 @@ public:
     template <typename T>
     T * load(u32 length, u32 alignment=0)
     {
-        u32 loaderAlign = getAlign();
-        length = ALIGN_TO(length, loaderAlign);
-        void * buf = alloc(length, MAX(alignment, loaderAlign));
+        length = ALIGN_TO(length, mAlignment);
+        void * buf = alloc(length, MAX(alignment, mAlignment));
         loadImpl(buf, length);
         return reinterpret_cast<T *>(buf);
     }
@@ -54,9 +53,10 @@ public:
     /*
         Creates a loader for a file
     */
-    FileLoader(const char * filename)
+    FileLoader(const char * filename, u32 alignment)
     {
         mFilename = filename;
+        mAlignment = alignment;
     }
 };
 

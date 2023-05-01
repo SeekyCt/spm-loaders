@@ -22,7 +22,6 @@ protected:
     */
     void buildPath(char * dest, size_t n, const char * filename);
 
-    u32 getAlign() override;
     void loadImpl(void * dest, u32 length) override;
 
 public:

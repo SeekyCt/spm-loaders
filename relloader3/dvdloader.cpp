@@ -16,7 +16,7 @@ void DvdLoader::buildPath(char * dest, size_t n, const char * filename)
 }
 
 DvdLoader::DvdLoader(const char * filename)
-    : FileLoader(filename)
+    : FileLoader(filename, DVD_ALIGN)
 {
 
 }
@@ -42,11 +42,6 @@ u32 DvdLoader::getLength()
     u32 length = spm::dvdmgr::DVDMgrGetLength(entry);
     spm::dvdmgr::DVDMgrClose(entry);
     return length;
-}
-
-u32 DvdLoader::getAlign()
-{
-    return DVD_ALIGN;
 }
 
 void DvdLoader::loadImpl(void * dest, u32 length)

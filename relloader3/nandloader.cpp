@@ -44,7 +44,7 @@ void NandLoader::buildPath(char * dest, size_t n, const char * filename)
 }
 
 NandLoader::NandLoader(const char * filename, bool oldMode)
-    : FileLoader(filename)
+    : FileLoader(filename, IOS_ALIGN)
 {
     mOldMode = oldMode;
 }
@@ -85,11 +85,6 @@ u32 NandLoader::getLength()
     wii::ipc::IOS_Close(fd);
 
     return length;
-}
-
-u32 NandLoader::getAlign()
-{
-    return IOS_ALIGN;
 }
 
 void NandLoader::loadImpl(void * dest, u32 length)
