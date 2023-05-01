@@ -100,7 +100,7 @@ void loaderMain()
         RelLoader * loader = relLoaders[i];
         if (loader->canLoad())
         {
-            wii::os::OSReport("Use loader %d\n", i);
+            logLoaderUsed(i);
             loader->load();
             loaded = true;
             break;

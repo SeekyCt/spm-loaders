@@ -16,6 +16,14 @@
 
 namespace relloader3 {
 
+static s32 loaderUsed = -1;
+
+void logLoaderUsed(s32 loader)
+{
+    wii::os::OSReport("Use loader %d\n", loader);
+    loaderUsed = loader;
+}
+
 void NORETURN assertionError(const char * file, s32 line, const char * function, s32 code)
 {
     char message[128];
@@ -40,10 +48,11 @@ void NORETURN error(const char * message)
     msl::stdio::snprintf(
         fullMessage,
         sizeof(fullMessage),
-        "[%d|%d|%d] %s",
+        "[%d|%d|%d|%d] %s",
         relloader3::RelLoaderHeader::instance->implementationType,
         relloader3::RelLoaderHeader::instance->implementationVersion,
         relloader3::RelLoaderHeader::instance->payloadVersion,
+        loaderUsed,
         message
     );
 

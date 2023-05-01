@@ -9,6 +9,11 @@
 namespace relloader3 {
 
 /*
+    Logs the id of the RelLoader used
+*/
+void logLoaderUsed(s32 loader);
+
+/*
     Calls assertionError with automatic filename, line and function
 */
 #define ERROR(code) assertionError(__FILE__, __LINE__, __FUNCTION__, code)
