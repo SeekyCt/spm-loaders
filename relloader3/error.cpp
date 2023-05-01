@@ -16,19 +16,17 @@
 
 namespace relloader3 {
 
-void NORETURN assertionError(const char * file, s32 line, const char * function, s32 code,
-                             const char * context)
+void NORETURN assertionError(const char * file, s32 line, const char * function, s32 code)
 {
     char message[128];
 
     msl::stdio::snprintf(
         message,
         sizeof(message),
-        "%s line %d (%s):\nfailed %s with %d",
+        "%s line %d (%s):\nfailed with %d",
         file,
         line,
         function,
-        context,
         code
     );
 

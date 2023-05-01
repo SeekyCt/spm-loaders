@@ -25,7 +25,7 @@ void OldRelLoader::doOldLoad(wii::os::RelHeader * relF)
     relF->prolog();
 
     // Load rel
-    CHECK_TRUE(sFinalLoader->RelLoader::tryLoad(), "old load");
+    CHECK_TRUE(sFinalLoader->RelLoader::tryLoad());
 }
 
 bool OldRelLoader::tryLoad()

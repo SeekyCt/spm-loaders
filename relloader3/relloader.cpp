@@ -19,11 +19,11 @@ void RelLoader::executeRel(wii::os::RelHeader * rel)
 {
     // Allocate bss
     void * bss = alloc(rel->bssSize, rel->bssAlign);
-    CHECK_PTR(bss, rel->bssSize, "bss alloc");
+    CHECK_PTR(bss, rel->bssSize);
 
     // Link
     bool ret = wii::os::OSLink(rel, bss);
-    CHECK_TRUE(ret, "OSLink");
+    CHECK_TRUE(ret);
 
     // Call prolog
     rel->prolog();    
