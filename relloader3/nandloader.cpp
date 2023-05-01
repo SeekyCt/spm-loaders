@@ -13,10 +13,11 @@
 
 namespace relloader3 {
 
-static s32 open(const char * path)
+static s32 open(const char * path, bool mustExist=true)
 {
     s32 fd = wii::ipc::IOS_Open(path, wii::ipc::IOS_OPEN_READ);
-    CHECK_ERROR(fd);
+    if (fd != ios::fs::ERR_FS_ENOENT || mustExist)
+        CHECK_ERROR(fd);
     return fd;
 }
 
@@ -78,7 +79,7 @@ bool NandLoader::canLoad()
     buildPath(path, sizeof(path), mFilename);
 
     // Try open
-    s32 fd = open(path);
+    s32 fd = open(path, false);
 
     // Fail if not opened
     if (fd == ios::fs::ERR_FS_ENOENT)
