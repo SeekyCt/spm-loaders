@@ -229,7 +229,7 @@ def emit_rules(n: Writer):
     # .bin -> gecko .txt conversion
     n.rule(
         "makegecko",
-        command = "$python $makegecko $in $out",
+        command = "$python $makegecko $in $out --revision $revision",
         description = "makegecko $out"
     )
 
@@ -443,6 +443,12 @@ class GameVersion:
     """Name of the version (rgX region rg revision X)"""
     name: str
 
+    """Region name"""
+    region: str
+
+    """Revision number"""
+    revision: int
+
     """LST for this version's symbols"""
     lst: File
 
@@ -455,15 +461,19 @@ class GameVersion:
     """Path to the main.dol file for this version"""
     dol: File
 
-    def __init__(self, name: str):
-        # Save name
-        self.name = name
+    def __init__(self, region: str, revision: int):
+        # Save region and revision
+        self.region = region
+        self.revision = revision
+
+        # Build name
+        self.name = f"{region}{revision}"
 
         # Get preprocessor define
         self.define = f"SPM_{self.name.upper()}"
 
         # Get lst file and dol
-        dol_name = "eu0" if name == "eu1" else name
+        dol_name = "eu0" if self.name == "eu1" else self.name
         self.dol = SourceFile(
             os.path.join("$dumpdir", dol_name, "main.dol")
         )
@@ -473,7 +483,7 @@ class GameVersion:
 
         # Get linker script
         self.ldscript = BuiltFile(
-            os.path.join("$builddir", name, "symbols.ld"),
+            os.path.join("$builddir", self.name, "symbols.ld"),
             "lst2ld",
             [self.lst]
         )
@@ -517,13 +527,16 @@ def build_relloader3(dest: str, builddir: str, game_ver: GameVersion) -> BuiltFi
         [elf]
     )
 
-def build_impl_gecko(dest: str, payload: BuiltFile) -> BuiltFile:
+def build_impl_gecko(dest: str, payload: BuiltFile, game_ver: GameVersion) -> BuiltFile:
     """Builds the gecko code implementation of a payload"""
 
     return BuiltFile(
         dest,
         "makegecko",
-        [payload]
+        [payload],
+        {
+            "revision" : game_ver.revision
+        }
     )
 
 def build_impl_riivo(dest: str, payload: BuiltFile) -> BuiltFile:
@@ -632,6 +645,7 @@ def main(game_versions: List[GameVersion]):
             build_impl_gecko(
                 os.path.join("$outdir", f"gecko_{game_ver.name}.txt"),
                 relloader,
+                game_ver
             )
         )
         implementations.append(
@@ -667,18 +681,18 @@ def main(game_versions: List[GameVersion]):
     n.close()
 
 game_versions = {
-    name : GameVersion(
-        name
+    f"{region}{revision}" : GameVersion(
+        region, revision
     )
-    for name in [
-        "eu0",
-        "eu1",
-        "us0",
-        "us1",
-        "us2",
-        "jp0",
-        "jp1",
-        "kr0"        
+    for region, revision in [
+        ("eu", 0),
+        ("eu", 1),
+        ("us", 0),
+        ("us", 2),
+        ("us", 3),
+        ("jp", 0),
+        ("jp", 1),
+        ("kr", 0)        
     ]
 }
 
