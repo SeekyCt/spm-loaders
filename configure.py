@@ -535,7 +535,7 @@ def build_impl_gecko(dest: str, payload: BuiltFile, game_ver: GameVersion) -> Bu
         "makegecko",
         [payload],
         {
-            "revision" : game_ver.revision
+            "revision" : str(game_ver.revision),
         }
     )
 
@@ -556,7 +556,7 @@ def build_impl_dol(dest: str, payload: BuiltFile, game_ver: GameVersion) -> Buil
 
 def build_saveloader(dest: str, builddir: str, payload: BuiltFile, game_ver: GameVersion
                     ) -> BuiltFile:
-    """Builds the saveloader makewiimario "payload" (TODO: rename?) """
+    """Builds the saveloader makewiimario "payload" """
 
     # Setup source files
     as_safe_path = payload.path.replace('\\', '/')

@@ -9,7 +9,7 @@ The components are split into 2 categories:
 - Implementations (loaders & executors of generic payloads)
     - Save Exploit
     - Gecko Code
-    - Dol Patch (TODO)
+    - Dol Patch
     - Riivolution XML (TODO)
 
 ## Memory Usage
