@@ -1,13 +1,12 @@
 # spm-loaders
 
 This repo contains some generalised loader components, and a specific standard design built off of those.
-See [Components](#components) for details of the components, and [STANDARD.MD] for the more specific details.
 
 The components are split into 2 categories:
 - Payload (end goal code to run)
     - relloader
 - Implementations (loaders & executors of generic payloads)
-    - Save Exploit
+    - Save Exploit w/ saveloader
     - Gecko Code
     - Dol Patch
     - Riivolution XML (TODO)
@@ -41,7 +40,7 @@ A certain range of RAM across all regions is reserved for this: 80004200 - 80006
 - The following files assume this format:
     - `include/payload.h`
     - `include/payloadoffs.inc`
-    - `relloader3/entry.s`
+    - `include/payloadheader.inc`
     - `tools/makegecko.py`
 - **Header Magic**: ASCII value 'SPMP' (Super Paper Mario Payload)
 - **Header Version**: the format of this struct, currently 1
@@ -83,9 +82,10 @@ A certain range of RAM across all regions is reserved for this: 80004200 - 80006
 relloader is the main rel loader payload, shared between all implementations.
 
 - This expects to be loaded at 80004200
-    - For compatibility with saveloader, this limits the size to 0x800 bytes
 - This loads the file "./mod/rgX.rel" from disc if it exists, and falls back to "rgX.rel" in the save file if it doesn't
     - Where `rg` is `eu`, `us`, `jp` or `kr` for the region of the game, and `X` is 0-2 for the revision of the game
+    - mod.rel is also an acceptable file name, and will load in the style of the old rel loader (after relF.rel)
+        - If both are present in one location, rgX takes priority
 - The rel is placed on the unused MEM1 heap (id 2) if there's space, or the main MEM1 heap (id 0) otherwise
 
 ## Save Exploit Implementation
@@ -137,3 +137,10 @@ Creates a riivolution XML snippet that will load a payload on boot.
 ## Dol Patch Implementation
 
 Patches a dol file to load a payload on boot.
+
+- This depends on the dol for the region being placed in `dump/rgX/main.dol`
+    - Any non-present dols will be skipped on configure
+
+## Building
+
+TODO
