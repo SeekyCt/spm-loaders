@@ -52,7 +52,7 @@ PATCHDOL = os.path.join("$toolsdir", "patchdol.py")
 INCLUDES = ' '.join(
     "-I " + d
     for d in [
-        INCDIR,
+        "$incdir",
         os.path.join("$spm_headers", "include"),
         os.path.join("$spm_headers", "mod"),
     ]
@@ -82,7 +82,7 @@ CFLAGS = ' '.join([
     "-ffunction-sections", # Allow function deadstripping
     "-fdata-sections", # Allow data deadstripping
     "-g", # Emit debug info
-    "-Os", # High optimisation for speed
+    "-Os", # Optimisation for space
     "-Wall", # Enable all warnings
     "-Wextra", # Enable even more warnings
     "-Wpedantic", # Enable even more warnings than that
@@ -130,6 +130,7 @@ def emit_vars(n: Writer):
     """Emits the variables to a ninja file"""
 
     # Project dirs
+    n.variable("incdir", INCDIR)
     n.variable("builddir", BUILDDIR)
     n.variable("outdir", OUTDIR)
     n.variable("toolsdir", TOOLSDIR)
@@ -243,8 +244,6 @@ def emit_rules(n: Writer):
     )
 
     # dol & paylod bin -> dol patching
-    # Variables to pass in:
-    #     ?
     n.rule(
         "patchdol",
         command = "$python $patchdol $in $out"
@@ -688,8 +687,8 @@ game_versions = {
         ("eu", 0),
         ("eu", 1),
         ("us", 0),
+        ("us", 1),
         ("us", 2),
-        ("us", 3),
         ("jp", 0),
         ("jp", 1),
         ("kr", 0)        
