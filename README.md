@@ -21,7 +21,7 @@ A certain range of RAM across all regions is reserved for this: 80004200 - 80006
 - This is part of the TRK interrupt table, which goes unused and is in the same place in all versions
 - Technically, anything from the TRK string at 80004188 could've been used
     - The starting address chosen is slightly nicer
-    - This still leaves some space for future standards to use, should that be needed
+    - This still leaves some space for other systems to use
 
 ## Payload Header
 
