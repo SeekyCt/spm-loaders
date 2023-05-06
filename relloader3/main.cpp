@@ -23,15 +23,6 @@
 namespace relloader3 {
 
 /*
-    Create the context instance expected by the header
-*/
-extern "C" {
-
-RelLoaderContext loaderCtx;
-
-}
-
-/*
     Old loader filenames
 */
 #define OLD_DISK_FILENAME "mod.rel"

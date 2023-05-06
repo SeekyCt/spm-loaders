@@ -23,7 +23,7 @@ header:
 
 #define PAYLOAD_MAGIC "RLd3"
 #define PAYLOAD_VERSION 1
-#define CONTEXT loaderCtx
+#define CONTEXT 0
 #define LOAD_ADDRESS 0x80004200
 #define ENTRYPOINT loaderMain
 #define HOOK_ADDRESS (spmarioInit + HOOK_OFFS)
