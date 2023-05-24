@@ -69,7 +69,7 @@ static u32 getLengthOld(s32 fd)
 static void buildPath(char * dest, size_t n, const char * filename)
 {
     // Get game save folder path
-    char homedir[64];
+    char homedir[NAND_PATH_LENGTH];
     s32 ret = wii::nand::NANDGetHomeDir(homedir);
     CHECK_ERROR(ret);
 
@@ -80,7 +80,7 @@ static void buildPath(char * dest, size_t n, const char * filename)
 bool NandLoader::canLoad()
 {
     // Build full path
-    char path[64];
+    char path[NAND_PATH_LENGTH];
     buildPath(path, sizeof(path), mFilename);
 
     // Try open
@@ -100,7 +100,7 @@ bool NandLoader::canLoad()
 u32 NandLoader::getLength()
 {
     // Build full path
-    char path[64];
+    char path[NAND_PATH_LENGTH];
     buildPath(path, sizeof(path), mFilename);
 
     // Get length
@@ -118,7 +118,7 @@ u32 NandLoader::getLength()
 void NandLoader::loadImpl(void * dest, u32 length)
 {
     // Build full path
-    char path[64];
+    char path[NAND_PATH_LENGTH];
     buildPath(path, sizeof(path), mFilename);
 
     // Open file

@@ -8,6 +8,9 @@
 #include "error.h"
 #include "util.h"
 
+// Arbitrary length that should be long enough for paths
+#define PATH_SPACE 64
+
 namespace relloader3 {
 
 /*
@@ -31,7 +34,7 @@ static void buildPath(char * dest, size_t n, const char * filename)
 bool DvdLoader::canLoad()
 {
     // Build full path
-    char path[64];
+    char path[PATH_SPACE];
     buildPath(path, sizeof(path), mFilename);
 
     // Check file exists
@@ -41,7 +44,7 @@ bool DvdLoader::canLoad()
 u32 DvdLoader::getLength()
 {
     // Build full path
-    char path[64];
+    char path[PATH_SPACE];
     buildPath(path, sizeof(path), mFilename);
 
     // Get length
@@ -54,7 +57,7 @@ u32 DvdLoader::getLength()
 void DvdLoader::loadImpl(void * dest, u32 length)
 {
     // Build full path
-    char path[64];
+    char path[PATH_SPACE];
     buildPath(path, sizeof(path), mFilename);
 
     // Load file contents
