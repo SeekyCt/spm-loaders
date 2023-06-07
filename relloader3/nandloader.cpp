@@ -60,7 +60,7 @@ static u32 getLengthOld(s32 fd)
 {
     u8 header[0x20] ALIGNED(IOS_ALIGN);
     read(fd, header, sizeof(header));
-    return readBe32(header);
+    return ALIGN_TO(readBe32(header), IOS_ALIGN);
 }
 
 /*
