@@ -7,6 +7,6 @@
 	remote = https://github.com/SeekyCt/spm-headers.git
 	branch = spm-loaders
 	commit = 3628fc4fb33ce8d9b8af56cc77c571f48c99c3ee
-	parent = 703c7dd6d4e341b837f248a30d4bf9f055220201
+	parent = e6eb854235174843b35468b85583b39129c0329c
 	method = merge
 	cmdver = 0.4.5
