@@ -6,7 +6,7 @@
 [subrepo]
 	remote = https://github.com/SeekyCt/spm-headers.git
 	branch = spm-loaders
-	commit = e738b81e267d9d6d2773679f10be4c835c9c3120
-	parent = 76984409b5b9256db5021c937f4c7b233a51ea7e
+	commit = fe088fe1cf6a3fe5beb0fa0457b7228125c3aaf3
+	parent = 56f42c5766a1f5a9e4a370062103cf1c957e40d8
 	method = merge
 	cmdver = 0.4.5
