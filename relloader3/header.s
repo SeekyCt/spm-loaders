@@ -15,7 +15,9 @@ header:
 // TODO
 #if defined SPM_EU0 || defined SPM_EU1
 #define HOOK_OFFS 0x6f8
-#elif defined SPM_US0
+#elif defined SPM_KR0
+#define HOOK_OFFS 0x670
+#elif defined SPM_US0 || defined SPM_US1 || defined SPM_US2 || defined SPM_JP0 || defined SPM_JP1
 #define HOOK_OFFS 0x590
 #else
 .err
