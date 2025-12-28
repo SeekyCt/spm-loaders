@@ -11,3 +11,4 @@ __pycache__
 .vscode
 *.bat
 compile_commands.json
+venv
