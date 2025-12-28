@@ -526,6 +526,45 @@ def build_relloader3(dest: str, builddir: str, game_ver: GameVersion) -> BuiltFi
         [elf]
     )
 
+def build_memtest(dest: str, builddir: str, game_ver: GameVersion) -> BuiltFile:
+    """Builds the memtest payload"""
+
+    # Setup source files
+    sources, other = SourceFile.collect_files(
+        "memtest",
+        {
+            "flags" : ' '.join([
+                f"-D{game_ver.define}",
+            ])
+        }
+    )
+    ldscripts = other.pop(".ld") if ".ld" in other else []
+    assert len(other) == 0, f"Unsupported files in srcdir {[x for x in other.values()]}"
+
+    ldscripts.append(game_ver.ldscript)
+
+    # Make ELF
+    elf_path = os.path.join(builddir, "memtest.elf")
+    map_path = elf_path + ".map"
+    elf = build_elf(
+        elf_path,
+        map_path,
+        sources,
+        builddir,
+        ' '.join([
+            "-e loaderMain",
+            "-u header",
+        ]),
+        ldscripts
+    )
+
+    # Make bin
+    return BuiltFile(
+        dest,
+        "objcopy",
+        [elf]
+    )
+
 def build_impl_gecko(dest: str, payload: BuiltFile, game_ver: GameVersion) -> BuiltFile:
     """Builds the gecko code implementation of a payload"""
 
@@ -624,9 +663,15 @@ def main(game_versions: List[GameVersion]):
         builddir = os.path.join("$builddir", game_ver.name)
 
         # Build rel loader
-        relloader = build_relloader3(
-            os.path.join("$outdir", f"relloader_{game_ver.name}.bin"),
-            os.path.join(builddir, "relloader3"),
+        # relloader = build_relloader3(
+        #     os.path.join("$outdir", f"relloader_{game_ver.name}.bin"),
+        #     os.path.join(builddir, "relloader3"),
+        #     game_ver
+        # )
+
+        relloader = build_memtest(
+            os.path.join("$outdir", f"memtest_{game_ver.name}.bin"),
+            os.path.join(builddir, "memtest"),
             game_ver
         )
 

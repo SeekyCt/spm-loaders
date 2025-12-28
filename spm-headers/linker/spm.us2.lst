@@ -626,3 +626,7 @@
 8026F338:Run
 8056d570:SaveStart
 8056d574:SaveEnd
+
+// new to memtest
+801a5508:memInit
+803ebf48:memory_size_table
