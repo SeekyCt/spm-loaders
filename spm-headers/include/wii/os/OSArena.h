@@ -4,6 +4,8 @@
 
 CPP_WRAPPER(wii::os)
 
+extern void * __OSArenaHi;
+
 void * OSGetMEM1ArenaHi();
 void * OSGetMEM2ArenaHi();
 void * OSGetArenaHi();

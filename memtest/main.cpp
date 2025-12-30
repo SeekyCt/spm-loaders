@@ -84,7 +84,7 @@ void memPatch()
 
 }
 
-// TODO: title screen patch, crash handler
+// TODO: title screen patch, crash handler, romfontexpand
 
 void logHeaps()
 {
@@ -110,13 +110,21 @@ void loaderMain()
     // Run setup
     callCtors();
 
-    // memPatch();
+    memPatch();
 
     writeBranch(spm::memory::memInit, 0x414, logHeaps);
 
+    // Defer patch, exception handler only works after game init
+    #if defined SPM_EU0 || defined SPM_EU1
+        #define HOOK_OFFS 0x6f8
+    #elif defined SPM_KR0
+        #define HOOK_OFFS 0x670
+    #elif defined SPM_US0 || defined SPM_US1 || defined SPM_US2 || defined SPM_JP0 || defined SPM_JP1
+        #define HOOK_OFFS 0x590
+    #endif
+    writeBranch(spm::spmario::spmarioInit, HOOK_OFFS, exceptionPatch);
+
     spmarioInit_real();
 }
-
-// TODO: korea
 
 }

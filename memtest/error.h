@@ -48,4 +48,6 @@ void NORETURN assertionError(const char * file, s32 line, s32 code);
 */
 void NORETURN error(const char * message);
 
+void exceptionPatch();
+
 }

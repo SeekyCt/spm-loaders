@@ -665,6 +665,8 @@
 802642ac:sin
 
 // os.a
+// OSArena.c
+805aeb20:__OSArenaHi
 // OSCache.c
 80270050:DCFlushRange
 802700d8:ICInvalidateRange
