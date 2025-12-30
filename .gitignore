@@ -12,3 +12,5 @@ __pycache__
 *.bat
 compile_commands.json
 venv
+*.sh
+.cache
