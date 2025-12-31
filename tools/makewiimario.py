@@ -62,12 +62,12 @@ class ItemData:
         "eu0": 0x803f5f98,
         "eu1": 0x803f5f98,
         # TODO
-        "us0": 0,
-        "us1": 0,
-        "us2": 0,
-        "jp0": 0,
-        "jp1": 0,
-        "kr0": 0,
+        # "us0": 0,
+        # "us1": 0,
+        # "us2": 0,
+        # "jp0": 0,
+        # "jp1": 0,
+        # "kr0": 0,
     }
 
 
@@ -90,12 +90,12 @@ class SpmarioGlobals:
         "eu0": 0x80525550,
         "eu1": 0x80525550,
         # TODO
-        "us0": 0,
-        "us1": 0,
-        "us2": 0,
-        "jp0": 0,
-        "jp1": 0,
-        "kr0": 0,
+        # "us0": 0,
+        # "us1": 0,
+        # "us2": 0,
+        # "jp0": 0,
+        # "jp1": 0,
+        # "kr0": 0,
     }
 
     @staticmethod
@@ -131,12 +131,12 @@ class MarioPouchWork:
         "eu0": 0x80511a28,
         "eu1": 0x80511a28,
         # TODO
-        "us0": 0,
-        "us1": 0,
-        "us2": 0,
-        "jp0": 0,
-        "jp1": 0,
-        "kr0": 0,
+        # "us0": 0,
+        # "us1": 0,
+        # "us2": 0,
+        # "jp0": 0,
+        # "jp1": 0,
+        # "kr0": 0,
     }
 
     @staticmethod
@@ -196,6 +196,9 @@ def find_desc_msg_loc(version: str) -> Tuple[int, int]:
     + offsetof(ItemData, descMsg) so that itemDataTable[x].descMsg would read it
     """
 
+    assert version in MarioPouchWork.ADDR, f"Unsupported version {version}"
+    assert version in ItemData.ARRAY_ADDR, f"Unsupported version {version}"
+
     # shopItems has 0x40 safe bytes to use, so an aligned address exists in it
     shop_items_addr = MarioPouchWork.ADDR[version] + MarioPouchWork.OFFS_SHOP_ITEMS
 
@@ -220,6 +223,9 @@ def patch_wiimario(spmg: bytes, pouch: bytes, payload: bytes, version: str) -> T
     """Patches a wiimario save file's SpmarioGlobals and MarioPouchWork sections to execute a
     payload through the exploit"""
 
+    assert version in MarioPouchWork.ADDR, f"Unsupported version {version}"
+    assert version in SpmarioGlobals.ADDR, f"Unsupported version {version}"
+
     spmg = bytearray(spmg)
     pouch = bytearray(pouch)
 
@@ -233,7 +239,7 @@ def patch_wiimario(spmg: bytes, pouch: bytes, payload: bytes, version: str) -> T
         SpmarioGlobals.SIZE_LSW +
         SpmarioGlobals.SIZE_COIN_ENTRIES
     )
-    assert len(payload) < max_size, f"Payload too big (0x{len(payload):x}/0x{max_size:x})"
+    assert len(payload) < max_size, f"Payload too big ({len(payload)}/{max_size} bytes)"
     payload_addr = SpmarioGlobals.ADDR[version] + payload_offs
 
     # Write exploit string
