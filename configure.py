@@ -223,7 +223,7 @@ def emit_rules(n: Writer):
     # .elf -> .bin conversion
     n.rule(
         "objcopy",
-        command = "$objcopy $in $out -O binary",
+        command = "$objcopy $in $out -O binary --set-section-flags .bss=alloc,load,contents",
         description = "OBJCOPY $out"
     )
 
