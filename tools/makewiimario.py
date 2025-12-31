@@ -8,7 +8,7 @@ used by the rest of the repo.
 Save file parts used:
     MarioPouchWork.shopItems: fake descMsg pointer
     MarioPouchWork.catchCards: fake descMsg string
-    SpmarioGlobals.lswf,lsw,coinEntries: payload
+    SpmarioGlobals.gsw[1024:],lswf,lsw,coinEntries: payload
 
 This script makes no assumptions about the payload itself, other
 than it expecting to run from the lswf position
@@ -80,8 +80,10 @@ class SpmarioGlobals:
     OFFS_FRAMEBUFFER_HEIGHT = 0x1A
     OFFS_SAVE_NAME = 0x20
     OFFS_MAP_NAME = 0x44
+    OFFS_GSW = 0x544
     OFFS_LSWF = 0xD44
 
+    SIZE_GSW = 0x800
     SIZE_LSWF = 0x40
     SIZE_LSW = 0x400
     SIZE_COIN_ENTRIES = 0x900
@@ -233,8 +235,9 @@ def patch_wiimario(spmg: bytes, pouch: bytes, payload: bytes, version: str) -> T
     desc_msg_offs = MarioPouchWork.OFFS_CATCH_CARDS
     desc_msg_addr = MarioPouchWork.ADDR[version] + desc_msg_offs
     item_id, desc_msg_ptr_offs = find_desc_msg_loc(version)
-    payload_offs = SpmarioGlobals.OFFS_LSWF
+    payload_offs = SpmarioGlobals.OFFS_GSW + (SpmarioGlobals.SIZE_GSW // 2)
     max_size = (
+        SpmarioGlobals.SIZE_GSW // 2 +
         SpmarioGlobals.SIZE_LSWF +
         SpmarioGlobals.SIZE_LSW +
         SpmarioGlobals.SIZE_COIN_ENTRIES

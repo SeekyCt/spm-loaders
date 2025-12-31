@@ -27,8 +27,8 @@ The relevant OS global variables are updated so this shouldn't cause any incompa
 
 A few upper bounds are placed on payload size. The current overall limit is 0xb58 bytes.
 
-saveloader's save file location limits the size of it + its embedded payload to 0xd40 bytes.
-Currently this leaves payloads 0xd40 - 0x1f4 = 0xb4c bytes.
+saveloader's save file location limits the size of it + its embedded payload to 0x1140 bytes.
+Currently this leaves payloads 0x1140 - 0x1f4 = 0xf4c bytes.
 
 ### relloader3
 relloader3's ram location limits it to 0x800060bc - 0x80004200 = 0x1ebc bytes
