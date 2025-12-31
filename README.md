@@ -13,14 +13,26 @@ The components are split into 2 categories:
 
 ## Memory Usage
 
-A certain range of RAM across all regions is reserved for this: 80004200 - 800060bb (inclusive)
-- 80004200 - 80004fff is relloader
-- 80005000 - 800060bb is space for saveloader if needed
+A certain range of RAM across all regions is reserved for relloader3: 80004200 - 800060bb (inclusive)
 - This range can be patched in a dol easily
 - This is part of the TRK interrupt table, which goes unused and is in the same place in all versions
 - Technically, anything from the TRK string at 80004188 could've been used
     - The starting address chosen is slightly nicer
     - This still leaves some space for other systems to use
+
+Additionally, saveloader will reserve a small chunk of memory from the MEM1 Arena Hi for use in rebooting.
+The relevant OS global variables are updated so this shouldn't cause any incompatibilities.
+
+## Size Constraints
+
+A few upper bounds are placed on payload size. The current overall limit is 0xb58 bytes.
+
+saveloader's save file location limits the size of it + its embedded payload to 0xd40 bytes.
+Currently this leaves payloads 0xd40 - 0x1f4 = 0xb4c bytes.
+
+### relloader3
+relloader3's ram location limits it to 0x800060bc - 0x80004200 = 0x1ebc bytes
+
 
 ## Payload Header
 

@@ -32,8 +32,8 @@ entry:
 /*
     Constants
 */
-.set LOADER_LOWMEM_LOCATION, 0x80005000
 .set LOADER_ARENA_LOCATION, 0x81000000
+.set SYS_ARENA_HI, 0x80003110
 
 /*
     ABI notes:
@@ -75,7 +75,7 @@ blr
 
 /*
     Stage 2
-    Execution Location: in save file (first) or lowmem (on user reboot)
+    Execution Location: in save file (first) or arena hi (on user reboot)
     Execution Time: on __OSReboot
     Purpose: copy loader to saved region & hook dol's Run for stage 3
 
@@ -213,12 +213,15 @@ lwz r3, (payload - stage4_pic)+OFFS_PAYLOAD_HOOK_ADDRESS (r30)
 lwz r4, (payload - stage4_pic)+OFFS_PAYLOAD_ENTRYPOINT (r30)
 bl writeBranch
 
-// Get lowmem location
-lis r28, LOADER_LOWMEM_LOCATION@h
-ori r28, r28, LOADER_LOWMEM_LOCATION@l
+// Allocate space at arena hi for reboot loader
+lis r27, SYS_ARENA_HI@ha
+lwz r28, SYS_ARENA_HI@l (r27)
+subi r28, r28, LOADER_SIZE
+rlwinm r28, r28, 0, 0, 26
+stw r28, SYS_ARENA_HI@l (r27)
 
-// Copy loader to lowmem location
-// memmove(LOADER_LOWMEM_LOCATION, entry, LOADER_SIZE)
+// Copy loader to arena hi location
+// memmove(arenaHi, entry, LOADER_SIZE)
 mr r3, r28
 addi r4, r30, (entry - stage4_pic)
 li r5, LOADER_SIZE
@@ -226,13 +229,13 @@ lis r12, memmove@h
 ori r12, r12, memmove@l
 mtlr r12
 blrl
-// flushCache(LOADER_LOWMEM_LOCATION, LOADER_SIZE)
+// flushCache(arenaHi, LOADER_SIZE)
 mr r3, r28
 li r4, LOADER_SIZE
 bl flushCache
 
 // Setup stage 2 to rerun on user reboot
-// writeBranch(__OSReboot, LOADER_LOWMEM_LOCATION.stage2)
+// writeBranch(__OSReboot, arenaHi.stage2)
 lis r3, __OSReboot@h
 ori r3, r3, __OSReboot@l
 addi r4, r28, (stage2 - entry)
