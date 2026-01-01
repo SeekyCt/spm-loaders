@@ -25,10 +25,13 @@ The relevant OS global variables are updated so this shouldn't cause any incompa
 
 ## Size Constraints
 
-A few upper bounds are placed on payload size. The current overall limit is 0xb58 bytes.
+A few upper bounds are placed on payload size:
+- saveloader's save file location limits the size of it + its embedded payload to 0x1140 bytes.
+  Currently this leaves payloads 0x1140 - 0x1f4 = 0xf4c bytes.
+- Dolphin's gecko code handler limits codes to 0xcb8 bytes of space, which limits payloads to 0xcb0 bytes.
+    - Other codehandlers may have lower limits
 
-saveloader's save file location limits the size of it + its embedded payload to 0x1140 bytes.
-Currently this leaves payloads 0x1140 - 0x1f4 = 0xf4c bytes.
+The current overall bottleneck is gecko codehandlers.
 
 ### relloader3
 relloader3's ram location limits it to 0x800060bc - 0x80004200 = 0x1ebc bytes

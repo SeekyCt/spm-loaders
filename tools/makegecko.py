@@ -10,6 +10,7 @@ from common import be32, make_branch_instr, Payload
 IMPLEMENTATION_TYPE = 0
 IMPLEMENTATION_VERSION = 1
 
+DOLPHIN_MAX_CODESIZE = 0xcb8
 
 def gecko_opword(opcode: int, addr: int) -> bytes:
     """Creates the opcode word of a gecko code"""
@@ -96,6 +97,8 @@ if __name__ == "__main__":
             code +
             make_conditional_end()
         )
+
+    assert len(code) < DOLPHIN_MAX_CODESIZE, f"Gecko code too big ({len(code)}/{DOLPHIN_MAX_CODESIZE} bytes)"
 
     # Convert to text
     txt = to_gecko_text(code)
