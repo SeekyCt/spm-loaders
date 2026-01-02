@@ -464,7 +464,9 @@
 8025C8AC:strcat
 802964A0:IOS_Read
 802969C8:IOS_Ioctl
+802932bc:MEMFindContainHeap
 802939EC:MEMAllocFromExpHeapEx
+80293a9c:MEMFreeToExpHeap
 80273B48:__OSReboot
 8026F298:Run
 8056d3f0:SaveStart

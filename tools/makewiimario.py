@@ -61,13 +61,12 @@ class ItemData:
     ARRAY_ADDR = {
         "eu0": 0x803f5f98,
         "eu1": 0x803f5f98,
-        # TODO
-        # "us0": 0,
-        # "us1": 0,
-        # "us2": 0,
-        # "jp0": 0,
-        # "jp1": 0,
-        # "kr0": 0,
+        "us0": 0x803b6978,
+        "us1": 0x803b7cd8,
+        "us2": 0x803b7e78,
+        "jp0": 0x8038bbf8,
+        "jp1": 0x8038cd78,
+        "kr0": 0x80426ab8,
     }
 
 
@@ -91,13 +90,12 @@ class SpmarioGlobals:
     ADDR = {
         "eu0": 0x80525550,
         "eu1": 0x80525550,
-        # TODO
-        # "us0": 0,
-        # "us1": 0,
-        # "us2": 0,
-        # "jp0": 0,
-        # "jp1": 0,
-        # "kr0": 0,
+        "us0": 0x804e2550,
+        "us1": 0x804e3dd0,
+        "us2": 0x804e3f50,
+        "jp0": 0x804b7850,
+        "jp1": 0x804b8e50,
+        "kr0": 0x8055ceb0,
     }
 
     @staticmethod
@@ -132,13 +130,12 @@ class MarioPouchWork:
     ADDR = {
         "eu0": 0x80511a28,
         "eu1": 0x80511a28,
-        # TODO
-        # "us0": 0,
-        # "us1": 0,
-        # "us2": 0,
-        # "jp0": 0,
-        # "jp1": 0,
-        # "kr0": 0,
+        "us0": 0x804cea28,
+        "us1": 0x804d02a8,
+        "us2": 0x804d0428,
+        "jp0": 0x804a3d28,
+        "jp1": 0x804a5328,
+        "kr0": 0x80549310,
     }
 
     @staticmethod
