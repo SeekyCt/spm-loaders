@@ -115,7 +115,6 @@ void NORETURN error(const char * message)
 
 extern "C" {
     bool inOSPanic = false;
-    char exceptionWorkingText[256];
 
     void OSPanicForwarder();
     void exceptionOSReportForwarder();
@@ -164,24 +163,24 @@ __asm__ (
 "exceptionOSReportForwarder:"
     "mflr 0;"
     "stw 0, 4 (1);"
-    "stwu 1, -32 (1);"
-    "mr 10, 9;"
-    "mr 9, 8;"
-    "mr 8, 7;"
-    "mr 7, 6;"
-    "mr 6, 5;"
-    "mr 5, 4;"
-    "mr 4, 3;"
-    "lis 3, exceptionWorkingText@h;"
-    "ori 3, 3, exceptionWorkingText@l;"
-    "bl sprintf;"
+    "stwu 1, (-32 - 256) (1);"
+    "mr 10, 8;"
+    "mr 9, 7;"
+    "mr 8, 6;"
+    "mr 7, 5;"
+    "mr 6, 4;"
+    "mr 5, 3;"
+    "li 4, 256;"
+    "addi 3, 1, 32;"
+    "bl snprintf;"
 
-    "lis 3, exceptionWorkingText@h;"
-    "ori 3, 3, exceptionWorkingText@l;"
-    "addi 1, 1, 32;"
+    "addi 3, 1, 32;"
+    "bl exceptionOSReport;"
+
+    "addi 1, 1, (32 + 256);"
     "lwz 0, 4 (1);"
     "mtlr 0;"
-    "b exceptionOSReport;"
+    "blr;"
 );
 
 static wii::gx::GXColor titleColour {0xff, 0x20, 0x20, 0xff};
