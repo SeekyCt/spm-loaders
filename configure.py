@@ -645,7 +645,7 @@ def build_impl_save(dest: str, builddir: str, payload: BuiltFile, game_ver: Game
         "makewiimario",
         [saveloader],
         {
-            "savename" : f"Rel Loader 3 {game_ver.name}",
+            "savename" : f"memtest {game_ver.name}",
             "game_ver" : game_ver.name
         }
     )
