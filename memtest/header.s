@@ -12,7 +12,7 @@
 .type header, @object
 header:
 
-#define PAYLOAD_MAGIC "RLd3"
+#define PAYLOAD_MAGIC "MEMT"
 #define PAYLOAD_VERSION 1
 #define CONTEXT 0
 #define LOAD_ADDRESS 0x80004200
