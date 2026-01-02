@@ -685,13 +685,13 @@ def main(game_versions: List[GameVersion]):
                 game_ver
             )
         )
-        implementations.append(
-            build_impl_gecko(
-                os.path.join("$outdir", f"gecko_{game_ver.name}.txt"),
-                relloader,
-                game_ver
-            )
-        )
+        # implementations.append(
+        #     build_impl_gecko(
+        #         os.path.join("$outdir", f"gecko_{game_ver.name}.txt"),
+        #         relloader,
+        #         game_ver
+        #     )
+        # )
         implementations.append(
             build_impl_riivo(
                 os.path.join("$outdir", f"riivolution_{game_ver.name}.bin"),
