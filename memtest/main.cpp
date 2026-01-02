@@ -114,6 +114,32 @@ void loaderMain()
 
     writeBranch(spm::memory::memInit, 0x414, logHeaps);
 
+    #if defined SPM_EU0
+        #define hudDisp 0x8019a16c
+    #elif defined SPM_US0
+        #define hudDisp 0x8019933c
+    #elif defined SPM_US1
+        #define hudDisp 0x80199398
+    #elif defined SPM_US2
+        #define hudDisp 0x801997a8
+    #elif defined SPM_JP0
+        #define hudDisp 0x8019932c
+    #elif defined SPM_JP1
+        #define hudDisp 0x80199374
+    #else
+        #error
+    #endif
+
+    #if defined SPM_EU0
+        #define HUD_DISP_OFFS 0x33c
+    #elif defined SPM_US0 || defined SPM_US1 || defined SPM_US2 || defined SPM_JP0 || defined SPM_JP1
+        #define HUD_DISP_OFFS 0x2f8
+    #else
+        #error
+    #endif
+
+    writeWord(hudDisp, HUD_DISP_OFFS, 0x98810054);
+
     // Defer patch, exception handler only works after game init
     #if defined SPM_EU0 || defined SPM_EU1
         #define HOOK_OFFS 0x6f8

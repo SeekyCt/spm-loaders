@@ -109,17 +109,33 @@ if __name__ == "__main__":
         "us0": 0x801a5194,
         "us1": 0x801a51f0,
         "us2": 0x801a5508,
-        # "kr0": 0x8019e6a4,
     }[region]
 
     size_table = {
         "eu0": 0x8042a408,
         "jp0": 0x803bfc68,
         "jp1": 0x803c0de8,
-        # "kr0": 0x8045b3c8,
         "us0": 0x803eaa08,
         "us1": 0x803ebd68,
         "us2": 0x803ebf48,
+    }[region]
+
+    hudDisp = {
+        "eu0": 0x8019a16c,
+        "us0": 0x8019933c,
+        "us1": 0x80199398,
+        "us2": 0x801997a8,
+        "jp0": 0x8019932c,
+        "jp1": 0x80199374,
+    }[region]
+    hudDisp_hook = {
+        "eu0": 0x33c,
+        "eu1": 0x33c,
+        "us0": 0x2f8,
+        "us1": 0x2f8,
+        "us2": 0x2f8,
+        "jp0": 0x2f8,
+        "jp1": 0x2f8,
     }[region]
 
     # Make code
@@ -135,7 +151,9 @@ if __name__ == "__main__":
         make_uint_04(memInit + 0x27c, 0x3bc0000c) +
         make_uint_04(memInit + 0x344, 0x3b200003) +
         make_uint_04(memInit + 0x348, 0x3b00000c) + 
-        make_bin_06(size_table, new_size_table)
+        make_bin_06(size_table, new_size_table) +
+
+        make_uint_04(hudDisp + hudDisp_hook, 0x98810054) # Discolour HP bar
     )
 
     # Convert to text
