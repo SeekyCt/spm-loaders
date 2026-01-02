@@ -19,12 +19,11 @@ def gecko_opword(opcode: int, addr: int) -> bytes:
     return be32(opword)
 
 
-def make_branch_04(hook_addr: int, dest: int) -> bytes:
-    """Makes an 04 gecko code for a branch"""
+def make_bin_04(addr: int, bin_data: bytes) -> bytes:
+    """Makes an 04 gecko code"""
 
-    opword = gecko_opword(0x04, hook_addr)
-    val = make_branch_instr(hook_addr, dest)
-    return opword + val
+    assert len(bin_data) == 4
+    return gecko_opword(0x04, addr) + bin_data
 
 
 def make_bin_06(bin_addr: int, bin_data: bytes) -> bytes:
@@ -56,6 +55,11 @@ def make_byte_28(addr: int, val: int) -> bytes:
     return opword + valword
 
 
+def make_bin_22(addr: int, bin_data: bytes) -> bytes:
+    assert len(bin_data) == 4
+    return gecko_opword(0x22, addr) + bin_data
+
+
 def make_conditional_end() -> bytes:
     return gecko_opword(0xE0, 0) + be32(0x8000_8000)
 
@@ -84,19 +88,17 @@ if __name__ == "__main__":
     # Get data
     payload = Payload(args.payload_path, IMPLEMENTATION_TYPE, IMPLEMENTATION_VERSION)
 
+    # Calculate hook branch
+    branch = make_branch_instr(payload.hook_addr, payload.entrypoint)
+
     # Make code
     code = (
-        make_branch_04(payload.hook_addr, payload.entrypoint) +
-        make_bin_06(payload.load_addr, payload.data)
+        (make_byte_28(0x8000_0007, args.revision) if args.revision != -1 else bytes()) +
+        make_bin_22(payload.hook_addr, branch) +
+        make_bin_04(payload.hook_addr, branch) +
+        make_bin_06(payload.load_addr, payload.data) +
+        make_conditional_end()
     )
-
-    # Add revision check if asked
-    if args.revision != -1:
-        code = (
-            make_byte_28(0x8000_0007, args.revision) +
-            code +
-            make_conditional_end()
-        )
 
     assert len(code) < DOLPHIN_MAX_CODESIZE, f"Gecko code too big ({len(code)}/{DOLPHIN_MAX_CODESIZE} bytes)"
 
