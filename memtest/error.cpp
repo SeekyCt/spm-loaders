@@ -5,6 +5,7 @@
 #include <msl/string.h>
 #include <common.h>
 #include <spm/evtmgr_cmd.h>
+#include <spm/memory.h>
 #include <spm/romfont.h>
 #include <spm/relmgr.h>
 #include <spm/spmario.h>
@@ -90,6 +91,28 @@ void NORETURN error(const char * message)
     wii::os::OSFatal(&fg, &bg, message);
 }
 
+#if defined SPM_EU0 || defined SPM_EU1
+    #define getGameRegion() ("PAL")
+#elif defined SPM_US0 || defined SPM_US1 || defined SPM_US2
+    #define getGameRegion() ("NTSC-U")
+#elif defined SPM_JP0 || defined SPM_JP1
+    #define getGameRegion() ("NTSC-U")
+#elif defined SPM_KR0
+    #define getGameRegion() ("NTSC-U")
+#else
+    #error "Bad version"
+#endif
+
+#if defined SPM_EU0 || defined SPM_JP0 || defined SPM_US0 || defined SPM_KR0
+    #define getGameRevision() (0)
+#elif defined SPM_EU1 || defined SPM_JP1 || defined SPM_US1
+    #define getGameRevision() (1)
+#elif defined SPM_US2
+    #define getGameRevision() (2)
+#else
+    #error "Bad version"
+#endif
+
 extern "C" {
     bool inOSPanic = false;
     char exceptionWorkingText[256];
@@ -99,12 +122,14 @@ extern "C" {
     void exceptionDraw();
 
     void __OSUnhandledExceptionReal(s32 p1, s32 p2, s32 p3, s32 p4);
+    s32 evtmgrCmdReal(spm::evtmgr::EvtEntry*);
 }
 
-static int inException = 0;
+static bool inException = false;
 static char * exceptionText;
 #define EXCEPTION_TEXT_SIZE 4096
 static u32 head = 0;
+static spm::evtmgr::EvtScriptCode * lastScript = nullptr;
 
 #define SCREEN_TOP 228.0f
 #define SCREEN_BOTTOM -228.0f
@@ -119,6 +144,11 @@ __asm__ (
 "__OSUnhandledExceptionReal:"
     "stwu 1, -0x30(1);"
     "b __OSUnhandledException+4;"
+
+".global evtmgrCmdReal;"
+"evtmgrCmdReal:"
+    "stwu 1, -0x20(1);"
+    "b evtmgrCmd+4;"
 
 ".global OSPanicForwarder;"
 ".type OSPanicForwarder, @function;"
@@ -159,11 +189,11 @@ static wii::gx::GXColor titleColour {0xff, 0x20, 0x20, 0xff};
 static void drawTitle(f32 scale)
 {
     spm::romfont::romFontPrintGX(TEXT_LEFT, TITLE_Y, scale, &titleColour,
-                                 "Exception - TODO - %s Revision %d",
-                                 "", 0);
+                                 "Exception - memtest - %s Revision %d",
+                                 getGameRegion(), getGameRevision());
     spm::romfont::romFontPrintGX(TEXT_LEFT, TITLE_Y - LINE_HEIGHT, scale, &titleColour,
-                                 "Last Evt %x - relF %x - mod.rel %x", (u32) 0,
-                                 (u32) 0, (u32) 0);
+                                 "Last Evt %p - relF %p", (void *) lastScript,
+                                 (void *) (spm::relmgr::relmgr_wp ? spm::relmgr::relmgr_wp->relFile : 0));
 }
 
 const wii::gx::GXColor white  {0xff, 0xff, 0xff, 0xff};
@@ -277,23 +307,17 @@ extern "C" void exceptionOSReport(const char * msg)
 
 void checkExceptionFlags()
 {
-    if (inException > 0)
-    {
-        wii::os::OSReport("Uhoh: Exception handler has crashed!\n");
-    }
-    if (inException > 1)
-    {
+    if (inException)
         error("WARNING: Exception handler has crashed!\n");
-    }
 
     if (inOSPanic)
-        error("WARNING: OSPanic handler has crashed!\n");
+        exceptionOSReport("WARNING: OSPanic handler has crashed!\n");
 }
 
 static void checkDoubleCrash(s32 p1, s32 p2, s32 p3, s32 p4)
 {
     checkExceptionFlags();
-    inException++;
+    inException = true;
     __OSUnhandledExceptionReal(p1, p2, p3, p4);
 }
 
@@ -302,11 +326,10 @@ void exceptionDraw()
     exceptionMessageHandler(exceptionText);
 }
 
-static void * allocFromArenaHi(size_t size)
+static s32 patched_evtmgrCmd(spm::evtmgr::EvtEntry * entry)
 {
-    void * ret = (void *) (((u32)wii::os::__OSArenaHi - size) & ~0x1f);
-    wii::os::__OSArenaHi = ret;
-    return ret;
+    lastScript = entry->scriptStart;
+    return evtmgrCmdReal(entry);
 }
 
 void exceptionPatch()
@@ -335,7 +358,7 @@ void exceptionPatch()
     wii::os::__OSUnhandledException_msg2[75] = '\n';
     wii::os::__OSUnhandledException_msg3[72] = '\n';
 
-    exceptionText = (char *) allocFromArenaHi(4096);
+    exceptionText = (char *) spm::memory::__memAlloc(spm::memory::HEAP_MAIN, 4096);
 
     // OSDumpContext
     writeBranchLink(wii::os::OSDumpContext, 0x2c, exceptionOSReportForwarder);
@@ -350,6 +373,8 @@ void exceptionPatch()
     writeBranchLink(wii::os::OSDumpContext, 0x1ac, exceptionOSReportForwarder);
     writeBranchLink(wii::os::OSDumpContext, 0x1fc, exceptionOSReportForwarder);
     writeBranchLink(wii::os::OSDumpContext, 0x220, exceptionOSReportForwarder);
+
+    writeBranch(spm::evtmgr_cmd::evtmgrCmd, 0, patched_evtmgrCmd);
 
     romfontExpand();
 }
