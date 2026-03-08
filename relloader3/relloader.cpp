@@ -30,10 +30,16 @@ static void executeRel(wii::os::RelHeader * rel)
 
 void loadRel(FileLoader * loader)
 {
+    // Create stack buffer for header
+    u32 length = loader->alignLength(sizeof(wii::os::RelHeader));
+    u32 alignment = loader->alignment();
+    u8 _header[length + alignment];
+    auto * header = reinterpret_cast<wii::os::RelHeader *>(ALIGN_TO((u32)&_header, alignment));
+
     // Get alignment from file header
-    auto * header = loader->load<wii::os::RelHeader>(sizeof(wii::os::RelHeader));
+    wii::os::OSReport("Read header to %p %d", (void *)header, sizeof(*header));
+    loader->load<wii::os::RelHeader>(header, sizeof(*header));
     u32 relAlign = header->align;
-    free(header);
 
     // Load rel
     auto * rel = loader->load<wii::os::RelHeader>(loader->getLength(), relAlign);

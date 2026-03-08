@@ -28,7 +28,7 @@ header:
 #define CONTEXT 0
 #define LOAD_ADDRESS 0x80004200
 #define ENTRYPOINT loaderMain
-#define HOOK_ADDRESS (spmarioInit + HOOK_OFFS)
+#define HOOK_ADDRESS main
 
 #include "spm_loaders/payloadheader.inc"
 

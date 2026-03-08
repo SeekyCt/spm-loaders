@@ -39,13 +39,33 @@ public:
     */
     virtual u32 getLength() = 0;
 
+    u32 alignment()
+    {
+        return mAlignment;
+    }
+
+    u32 alignLength(u32 length)
+    {
+        return ALIGN_TO(length, mAlignment);
+    }
+
+    /*
+        Loads the file to RAM
+    */
+    template <typename T>
+    void load(T * dest, u32 length)
+    {
+        length = alignLength(length);
+        loadImpl(dest, length);
+    }
+
     /*
         Loads the file to RAM
     */
     template <typename T>
     T * load(u32 length, u32 alignment=0)
     {
-        length = ALIGN_TO(length, mAlignment);
+        length = alignLength(length);
         void * buf = alloc(length, MAX(alignment, mAlignment));
         CHECK_ALLOC(buf, length);
         loadImpl(buf, length);

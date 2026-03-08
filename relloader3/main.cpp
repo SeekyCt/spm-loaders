@@ -22,6 +22,14 @@
 
 namespace relloader3 {
 
+extern "C" void main_real();
+__asm__(
+".global main_real;"
+"main_real:"
+    "stwu 1, -0x10 (1);"
+    "b main+4;"
+);
+
 /*
     Old loader filenames
 */
@@ -71,13 +79,15 @@ static LoadMethod loadMethods[] = {
     {&loaderNandOld, true}
 };
 
+bool gameBooted = false;
+
 /*
     Main entrypoint (on blr of spmarioInit)
 */
 extern "C" void loaderMain();
 void loaderMain()
 {
-    wii::os::OSReport("Rel Loader 3 - v1\n");
+    wii::os::OSReport("Rel Loader 3 (main) - v1\n");
 
     // Run setup
     callCtors();
@@ -104,6 +114,9 @@ void loaderMain()
     // Check success
     if (!loaded)
         error("Error: rel not found on disc or in save file");
+
+    gameBooted = true;
+    main_real();
 }
 
 }

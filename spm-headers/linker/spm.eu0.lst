@@ -13,6 +13,9 @@
 80004000:memcpy
 80004104:memset
 
+// main.c
+8001da60:main
+
 // mapdata.c
 // text
 800294e0:mapDataPtr
@@ -664,6 +667,20 @@
 802642ac:sin
 
 // os.a
+// OSArena.c
+8026fac8:OSGetMEM1ArenaHi
+8026fad0:OSGetMEM2ArenaHi
+8026fad8:OSGetArenaHi
+8026fae0:OSGetMEM1ArenaLo
+8026fae8:OSGetMEM2ArenaLo
+8026faf0:OSGetArenaLo
+8026faf8:OSSetMEM1ArenaHi
+8026fb00:OSSetMEM2ArenaHi
+8026fb08:OSSetArenaHi
+8026fb10:OSSetMEM1ArenaLo
+8026fb18:OSSetMEM2ArenaLo
+8026fb20:OSSetArenaLo
+8026fb28:OSAllocFromMEM1ArenaLo
 // OSCache.c
 80270050:DCFlushRange
 802700d8:ICInvalidateRange

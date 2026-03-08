@@ -99,6 +99,7 @@ CXXFLAGS = ' '.join([
     "-fno-exceptions", # Disable C++ exceptions
     "-fno-rtti", # Disable runtime type info
     "-std=gnu++17", # Use C++17 with GNU extensions
+    "-Wno-vla", # Enable variable-length arrays
 ])
 
 # Asm flags
