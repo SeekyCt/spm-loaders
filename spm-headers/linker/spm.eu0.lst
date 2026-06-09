@@ -747,6 +747,9 @@
 // dvdfs.c
     // text
 8027b910:DVDConvertPathToEntrynum
+8027bc18:DVDFastOpen
+8027bc80:DVDClose
+8027bd8c:DVDReadPrio
 // more
     // data
 805aec08:__DVDThreadQueue

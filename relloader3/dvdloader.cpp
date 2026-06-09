@@ -1,5 +1,4 @@
 #include <common.h>
-#include <spm/dvdmgr.h>
 #include <wii/dvd.h>
 #include <wii/os.h>
 #include <msl/stdio.h>
@@ -16,11 +15,14 @@ namespace relloader3 {
 /*
     Opens a file and checks for errors
 */
-static spm::dvdmgr::DVDEntry * open(const char * path)
+static bool open(const char * path, wii::dvd::DVDFileInfo * fileInfo)
 {
-    spm::dvdmgr::DVDEntry * ret = spm::dvdmgr::DVDMgrOpen(path, 2, 0);
-    CHECK_PTR(ret);
-    return ret;
+    s32 entrynum = wii::dvd::DVDConvertPathToEntrynum(path);
+
+    if (entrynum == -1)
+        return false;
+
+    return wii::dvd::DVDFastOpen(entrynum, fileInfo);
 }
 
 /*
@@ -48,9 +50,10 @@ u32 DvdLoader::getLength()
     buildPath(path, sizeof(path), mFilename);
 
     // Get length
-    spm::dvdmgr::DVDEntry * entry = open(path);
-    u32 length = spm::dvdmgr::DVDMgrGetLength(entry);
-    spm::dvdmgr::DVDMgrClose(entry);
+    wii::dvd::DVDFileInfo fileInfo;
+    open(path, &fileInfo);
+    u32 length = fileInfo.length;
+    wii::dvd::DVDClose(&fileInfo);
     return length;
 }
 
@@ -61,9 +64,10 @@ void DvdLoader::loadImpl(void * dest, u32 length)
     buildPath(path, sizeof(path), mFilename);
 
     // Load file contents
-    spm::dvdmgr::DVDEntry * entry = open(path);
-    spm::dvdmgr::DVDMgrRead(entry, dest, length, 0);
-    spm::dvdmgr::DVDMgrClose(entry);
+    wii::dvd::DVDFileInfo fileInfo;
+    open(path, &fileInfo);
+    wii::dvd::DVDReadPrio(&fileInfo, dest, length, 0, 2);
+    wii::dvd::DVDClose(&fileInfo);
 }
 
 }
