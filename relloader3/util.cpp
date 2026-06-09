@@ -12,7 +12,7 @@ void * alloc(size_t size, u32 alignment)
     wii::os::OSReport("alloc(%zu, %u)\n", size, alignment);
     // Enforce minimum alignment
     alignment = MAX(alignment, 0x20);
-    wii::os::OSReport("->%d\n%d", alignment, gameBooted);
+    wii::os::OSReport("->%d (%d)\n", alignment, gameBooted);
 
     // Allocate from arena hi if running before memInit
     if (!gameBooted)

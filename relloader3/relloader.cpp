@@ -37,7 +37,7 @@ void loadRel(FileLoader * loader)
     auto * header = reinterpret_cast<wii::os::RelHeader *>(ALIGN_TO((u32)&_header, alignment));
 
     // Get alignment from file header
-    wii::os::OSReport("Read header to %p %d", (void *)header, sizeof(*header));
+    wii::os::OSReport("Read header to %p %d\n", (void *)header, sizeof(*header));
     loader->load<wii::os::RelHeader>(header, sizeof(*header));
     u32 relAlign = header->align;
 
